@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HOME PM</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#171717;background:#f5f5f7}
+*{box-sizing:border-box} body{margin:0}.app{max-width:700px;margin:auto;padding:24px 18px 90px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
+h1{font-size:30px;margin:0;letter-spacing:-1px}.date{color:#777;font-size:14px;margin-top:4px}
+button{border:0;border-radius:14px;padding:11px 15px;font-weight:600;cursor:pointer}
+.add{background:#171717;color:white;font-size:15px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px}
+.stat{background:white;border-radius:18px;padding:15px}.stat b{display:block;font-size:22px}.stat span{color:#777;font-size:12px}
+section{margin:22px 0}.section-title{font-size:18px;font-weight:700;margin-bottom:10px}
+.task{background:white;border-radius:17px;padding:14px 15px;margin:9px 0;display:flex;gap:12px;align-items:center;box-shadow:0 1px 3px #00000008}
+.check{width:24px;height:24px;border:2px solid #bbb;border-radius:50%;padding:0;background:white;flex:none}
+.task.done{opacity:.48;text-decoration:line-through}.task-text{flex:1;cursor:pointer}.subject{font-size:12px;color:#777;margin-bottom:3px}.name{font-size:15px;font-weight:600}
+.empty{color:#888;background:white;border-radius:16px;padding:20px;text-align:center}
+nav{position:fixed;bottom:0;left:0;right:0;background:#fffffff2;backdrop-filter:blur(12px);display:flex;justify-content:center;gap:34px;padding:12px}
+nav span{font-size:12px;color:#666}.modal{display:none;position:fixed;inset:0;background:#0005;align-items:flex-end;justify-content:center}.sheet{background:white;width:100%;max-width:700px;border-radius:25px 25px 0 0;padding:22px}
+input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;margin:7px 0 14px;font-size:16px}
+.row{display:flex;gap:10px}.row>*{flex:1}label{display:block;font-size:13px;color:#777;margin-top:8px}.save{width:100%;background:#171717;color:white}
+</style>
+</head>
+<body>
+<div class="app">
+<header><div><h1>HOME PM</h1><div class="date" id="date"></div></div><button class="add" onclick="openModal()">+ Задача</button></header>
+<div class="stats">
+<div class="stat"><b id="overdue">0</b><span>Прострочені</span></div>
+<div class="stat"><b id="today">0</b><span>Сьогодні</span></div>
+<div class="stat"><b id="progress">0</b><span>У процесі</span></div>
+</div>
+<section><div class="section-title">📚 Навчання</div><div id="learning"></div></section>
+<section><div class="section-title">📅 Найближчі</div><div id="upcoming"></div></section>
+</div>
+<nav><span>⌂<br>Головна</span><span>▦<br>Проєкти</span><span>□<br>Календар</span><span>⚙<br>Налаштування</span></nav>
+
+<div class="modal" id="modal" onclick="if(event.target===this)closeModal()">
+<div class="sheet">
+<h2>Нова задача</h2>
+<input id="name" placeholder="Назва задачі">
+<div class="row"><input id="subject" placeholder="Проєкт / предмет"><input id="due" type="date"></div>
+<select id="status"><option value="todo">Не розпочато</option><option value="progress">У процесі</option></select>
+<button class="save" onclick="addTask()">Додати задачу</button>
+</div></div>
+
+
+<div class="modal" id="taskModal" onclick="if(event.target===this)closeTask()">
+<div class="sheet">
+<h2 id="taskTitle"></h2>
+<div class="subject" id="taskMeta"></div>
+<label>Статус</label>
+<select id="taskStatus" onchange="updateTaskStatus()">
+<option value="todo">Не розпочато</option><option value="progress">У процесі</option><option value="done">Виконано</option>
+</select>
+<label>Підзадачі</label>
+<div id="subtasks"></div>
+<div class="row"><input id="subtaskInput" placeholder="Нова підзадача"><button onclick="addSubtask()">+</button></div>
+<label>Коментар</label>
+<input id="taskComment" placeholder="Додати коментар" onchange="updateComment()">
+<button class="save" onclick="closeTask()">Готово</button>
+</div></div>
+<script>
+const seed=[
+{id:1,name:"Записати есе на відео",subject:"Українська мова",due:"2026-09-29",status:"todo",done:false,subtasks:[],comment:""},
+{id:2,name:"Зробити презентацію",subject:"Хімія",due:"2026-09-29",status:"todo",done:false,subtasks:[],comment:""},
+{id:3,name:"Вивчити вірш",subject:"Українська література",due:"2026-09-30",status:"todo",done:false,subtasks:[],comment:""},
+{id:4,name:"Виконати вправу",subject:"Фізика",due:"2026-10-01",status:"todo",done:false,subtasks:[],comment:""}
+];
+let tasks=JSON.parse(localStorage.getItem("homepm")||"null")||seed;
+const today=new Date().toISOString().slice(0,10);
+document.getElementById("date").textContent=new Date().toLocaleDateString("uk-UA",{day:"numeric",month:"long",year:"numeric"});
+let currentTaskId=null;
+function openTask(id){
+ currentTaskId=id; let t=tasks.find(x=>x.id===id); if(!t)return;
+ t.subtasks=t.subtasks||[]; t.comment=t.comment||"";
+ document.getElementById("taskTitle").textContent=t.name;
+ document.getElementById("taskMeta").textContent=t.subject+" · дедлайн "+format(t.due);
+ document.getElementById("taskStatus").value=t.done?"done":t.status;
+ document.getElementById("taskComment").value=t.comment;
+ renderSubtasks(); document.getElementById("taskModal").style.display="flex";
+}
+function closeTask(){document.getElementById("taskModal").style.display="none";currentTaskId=null;render()}
+function updateTaskStatus(){
+ let t=tasks.find(x=>x.id===currentTaskId); if(!t)return;
+ let v=document.getElementById("taskStatus").value; t.status=v==="done"?"todo":v; t.done=v==="done"; save();
+}
+function updateComment(){
+ let t=tasks.find(x=>x.id===currentTaskId); if(t){t.comment=document.getElementById("taskComment").value;save();}
+}
+function renderSubtasks(){
+ let t=tasks.find(x=>x.id===currentTaskId); if(!t)return;
+ document.getElementById("subtasks").innerHTML=t.subtasks.map((x,i)=>
+ `<div class="task"><button class="check" onclick="toggleSubtask(${i})">${x.done?'✓':''}</button><div class="task-text ${x.done?'done':''}">${x.name}</div></div>`).join("")||'<div class="empty">Підзадач поки немає</div>';
+}
+function addSubtask(){
+ let input=document.getElementById("subtaskInput"), name=input.value.trim(); if(!name)return;
+ let t=tasks.find(x=>x.id===currentTaskId); t.subtasks.push({name,done:false}); input.value=""; save(); renderSubtasks();
+}
+function toggleSubtask(i){
+ let t=tasks.find(x=>x.id===currentTaskId); t.subtasks[i].done=!t.subtasks[i].done; save(); renderSubtasks();
+}
+function render(){
+let overdue=tasks.filter(t=>!t.done&&t.due<today).length;
+let td=tasks.filter(t=>!t.done&&t.due===today).length;
+let pr=tasks.filter(t=>!t.done&&t.status==="progress").length;
+document.getElementById("overdue").textContent=overdue;
+document.getElementById("today").textContent=td;
+document.getElementById("progress").textContent=pr;
+let active=tasks.filter(t=>!t.done).sort((a,b)=>a.due.localeCompare(b.due));
+let learn=active.filter(t=>t.subject);
+document.getElementById("learning").innerHTML=learn.slice(0,4).map(card).join("")||'<div class="empty">Задач поки немає</div>';
+document.getElementById("upcoming").innerHTML=active.slice(4).map(card).join("")||'<div class="empty">Усе під контролем ✨</div>';
+}
+function card(t){
+return `<div class="task ${t.done?'done':''}">
+<button class="check" onclick="event.stopPropagation();toggle(${t.id})">${t.done?'✓':''}</button>
+<div class="task-text" onclick="openTask(${t.id})"><div class="subject">${t.subject} · ${format(t.due)}</div><div class="name">${t.name}</div></div>
+</div>`;
+}
+function format(d){return new Date(d+"T12:00").toLocaleDateString("uk-UA",{day:"2-digit",month:"2-digit"})}
+function toggle(id){tasks=tasks.map(t=>t.id===id?{...t,done:!t.done}:t);save()}
+function save(){localStorage.setItem("homepm",JSON.stringify(tasks));render()}
+function openModal(){document.getElementById("modal").style.display="flex";document.getElementById("due").value=today}
+function closeModal(){document.getElementById("modal").style.display="none"}
+function addTask(){
+let name=document.getElementById("name").value.trim(); if(!name)return;
+tasks.push({id:Date.now(),name,subject:document.getElementById("subject").value||"Особисте",due:document.getElementById("due").value||today,status:document.getElementById("status").value,done:false,subtasks:[],comment:""});
+save();closeModal();document.getElementById("name").value="";document.getElementById("subject").value="";
+}
+render();
+</script>
+</body></html>
