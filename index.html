@@ -22,7 +22,7 @@ section{margin:22px 0}
 .task{background:white;border-radius:17px;padding:14px 15px;margin:9px 0;display:flex;gap:12px;align-items:center;box-shadow:0 1px 3px #00000008}
 .check{width:24px;height:24px;border:2px solid #bbb;border-radius:50%;padding:0;background:white;flex:none;display:flex;align-items:center;justify-content:center}
 .task.done{opacity:.6}.task.done .name{text-decoration:line-through}
-.task-text{flex:1;cursor:pointer}.subject{font-size:12px;color:#777;margin-bottom:3px}.name{font-size:15px;font-weight:600}
+.task-text{flex:1;cursor:pointer}.subject{font-size:12px;color:#777;margin-bottom:3px}.name{font-size:15px;font-weight:600}.reminder-badge{font-size:14px;margin-left:5px;vertical-align:middle}
 .empty{color:#888;background:white;border-radius:16px;padding:20px;text-align:center}
 nav{position:fixed;bottom:0;left:0;right:0;background:#fffffff2;backdrop-filter:blur(12px);display:flex;justify-content:center;gap:26px;padding:10px 8px;z-index:20}
 .nav-btn{background:transparent;padding:3px 10px;color:#666;font-size:12px;font-weight:500;border-radius:12px}
@@ -141,6 +141,15 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;ma
     <div class="row"><input id="subject" placeholder="Предмет / проєкт"><input id="due" type="date"></div>
     <label>Час <span style="color:#aaa">(необов’язково)</span></label>
     <input id="taskTime" type="time">
+    <label>Нагадування <span style="color:#aaa">(потрібен час задачі)</span></label>
+    <select id="taskReminder">
+      <option value="0">Не нагадувати</option>
+      <option value="5">За 5 хвилин</option>
+      <option value="15">За 15 хвилин</option>
+      <option value="30">За 30 хвилин</option>
+      <option value="60">За 1 годину</option>
+      <option value="1440">За 1 день</option>
+    </select>
     <select id="status"><option value="todo">Не розпочато</option><option value="progress">У процесі</option></select>
     <button class="save" onclick="addTask()">Додати задачу</button>
   </div>
@@ -154,6 +163,15 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;ma
     <div class="row"><div><label>Предмет / проєкт</label><input id="taskSubjectEdit" placeholder="Предмет / проєкт"></div><div><label>Дата</label><input id="taskDueEdit" type="date"></div></div>
     <label>Час <span style="color:#aaa">(необов’язково)</span></label>
     <input id="taskTimeEdit" type="time">
+    <label>Нагадування <span style="color:#aaa">(потрібен час задачі)</span></label>
+    <select id="taskReminderEdit">
+      <option value="0">Не нагадувати</option>
+      <option value="5">За 5 хвилин</option>
+      <option value="15">За 15 хвилин</option>
+      <option value="30">За 30 хвилин</option>
+      <option value="60">За 1 годину</option>
+      <option value="1440">За 1 день</option>
+    </select>
     <label>Напрямок</label>
     <select id="taskCategory">
       <option value="Навчання">👦 Навчання</option>
@@ -217,7 +235,7 @@ const seed=[
 {id:4,name:"Виконати вправу",subject:"Фізика",category:"Навчання",due:"2026-10-01",status:"todo",done:false,subtasks:[],comment:""}
 ];
 let tasks=JSON.parse(localStorage.getItem("homepm")||"null")||seed;
-tasks=tasks.map(t=>({...t,category:t.category||"Навчання",subtasks:t.subtasks||[],comment:t.comment||"",time:t.time||""}));
+tasks=tasks.map(t=>({...t,category:t.category||"Навчання",subtasks:t.subtasks||[],comment:t.comment||"",time:t.time||"",reminder:Number(t.reminder)||0}));
 localStorage.setItem("homepm",JSON.stringify(tasks));
 const today=new Date().toISOString().slice(0,10);
 document.getElementById("date").textContent=new Date().toLocaleDateString("uk-UA",{day:"numeric",month:"long",year:"numeric"});
@@ -239,6 +257,7 @@ function openTask(id){
  document.getElementById("taskSubjectEdit").value=t.subject||"";
  document.getElementById("taskDueEdit").value=t.due||today;
  document.getElementById("taskTimeEdit").value=t.time||"";
+ document.getElementById("taskReminderEdit").value=String(Number(t.reminder)||0);
  document.getElementById("taskCategory").value=t.category||"Особисте";
  document.getElementById("taskStatus").value=t.done?"done":(t.status||"todo");
  document.getElementById("taskComment").value=t.comment||"";
@@ -253,6 +272,7 @@ function saveTaskEdits(){
  t.subject=document.getElementById("taskSubjectEdit").value.trim()||"Без проєкту";
  t.due=document.getElementById("taskDueEdit").value||today;
  t.time=document.getElementById("taskTimeEdit").value||"";
+ t.reminder=t.time?Number(document.getElementById("taskReminderEdit").value)||0:0;
  t.category=document.getElementById("taskCategory").value;
  const v=document.getElementById("taskStatus").value;
  t.status=v==="done"?"todo":v;
@@ -327,7 +347,7 @@ function categoryIcon(category){
 function card(t){
  return `<div class="task ${t.done?'done':''}">
  <button class="check" onclick="event.stopPropagation();toggle(${t.id})">${t.done?'✓':''}</button>
- <div class="task-text" onclick="openTask(${t.id})"><div class="subject"><span class="cat-icon">${categoryIcon(t.category)}</span>${escapeHtml(t.subject||'Без проєкту')} · ${format(t.due)}${t.time?" · "+escapeHtml(t.time):""}</div><div class="name">${escapeHtml(t.name)}</div></div>
+ <div class="task-text" onclick="openTask(${t.id})"><div class="subject"><span class="cat-icon">${categoryIcon(t.category)}</span>${escapeHtml(t.subject||'Без проєкту')} · ${format(t.due)}${t.time?" · "+escapeHtml(t.time):""}${t.reminder?'<span class="reminder-badge" title="Є нагадування">🔔</span>':""}</div><div class="name">${escapeHtml(t.name)}</div></div>
  <button onclick="event.stopPropagation();openTask(${t.id})" title="Редагувати" style="background:none;padding:5px;font-size:18px">✏️</button>
  ${t.done?`<button onclick="event.stopPropagation();deleteTask(${t.id})" title="Видалити" style="background:none;padding:5px;font-size:18px">🗑️</button>`:""}
  </div>`;
@@ -355,8 +375,10 @@ function openModal(){document.getElementById("modal").style.display="flex";docum
 function closeModal(){document.getElementById("modal").style.display="none"}
 function addTask(){
  let name=document.getElementById("name").value.trim(); if(!name)return;
- tasks.push({id:Date.now(),name,category:document.getElementById("category").value,subject:document.getElementById("subject").value||"Без проєкту",due:document.getElementById("due").value||today,time:document.getElementById("taskTime").value||"",status:document.getElementById("status").value,done:false,subtasks:[],comment:""});
- save();closeModal();document.getElementById("name").value="";document.getElementById("subject").value="";document.getElementById("taskTime").value="";
+ const taskTime=document.getElementById("taskTime").value||"";
+ const reminder=taskTime?Number(document.getElementById("taskReminder").value)||0:0;
+ tasks.push({id:Date.now(),name,category:document.getElementById("category").value,subject:document.getElementById("subject").value||"Без проєкту",due:document.getElementById("due").value||today,time:taskTime,reminder,status:document.getElementById("status").value,done:false,subtasks:[],comment:""});
+ save();closeModal();document.getElementById("name").value="";document.getElementById("subject").value="";document.getElementById("taskTime").value="";document.getElementById("taskReminder").value="0";
 }
 function dayNames(days){
   const names={0:"Нд",1:"Пн",2:"Вт",3:"Ср",4:"Чт",5:"Пт",6:"Сб"};
@@ -398,7 +420,7 @@ function ensureRecurringInstances(){
       const dateStr=localDate(d);
       if((r.deletedDates||[]).includes(dateStr))continue;
       if(!tasks.some(t=>t.recurringId===r.id&&t.due===dateStr)){
-        tasks.push({id:Date.now()+Math.random(),name:r.name,subject:r.subject||"Без проєкту",category:r.category,due:dateStr,time:r.time||"",status:"todo",done:false,subtasks:[],comment:"",recurringId:r.id,recurringInstance:true});
+        tasks.push({id:Date.now()+Math.random(),name:r.name,subject:r.subject||"Без проєкту",category:r.category,due:dateStr,time:r.time||"",status:"todo",done:false,subtasks:[],comment:"",reminder:Number(r.reminder)||0,recurringId:r.id,recurringInstance:true});
         changed=true;
       }
     }
@@ -442,6 +464,19 @@ function checkReminders(){
   const now=new Date();
   const keys=JSON.parse(localStorage.getItem("homepmNotified")||"[]");
   let changed=false;
+  // Звичайні задачі
+  for(const task of tasks.filter(x=>!x.done&&x.time&&Number(x.reminder)>0&&x.due)){
+    const [hh,mm]=task.time.split(":").map(Number);
+    const when=new Date(task.due+"T00:00:00");
+    when.setHours(hh,mm,0,0);
+    const reminderAt=new Date(when.getTime()-Number(task.reminder)*60000);
+    const key="task_"+task.id+"_"+task.due+"_"+task.reminder;
+    if(now>=reminderAt&&now<=new Date(when.getTime()+5*60000)&&!keys.includes(key)){
+      if('Notification' in window&&Notification.permission==='granted')new Notification('HOME PM',{body:`${task.name}${task.time?" · "+task.time:""}`});
+      keys.push(key); changed=true;
+    }
+  }
+  // Регулярні задачі
   for(const r of recurringTasks.filter(x=>x.active)){
     for(let delta=0;delta<=1;delta++){
       const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()-delta);
@@ -450,15 +485,14 @@ function checkReminders(){
       const [hh,mm]=(r.time||"00:00").split(":").map(Number);
       const when=new Date(d.getFullYear(),d.getMonth(),d.getDate(),hh,mm);
       const reminderAt=new Date(when.getTime()-Number(r.reminder||0)*60000);
-      const key=r.id+"_"+dateStr;
+      const key="rec_"+r.id+"_"+dateStr;
       if(now>=reminderAt&&now<=new Date(when.getTime()+5*60000)&&!keys.includes(key)){
-        const body=`${r.name} · ${r.time}`;
-        if('Notification' in window&&Notification.permission==='granted')new Notification('HOME PM',{body});
+        if('Notification' in window&&Notification.permission==='granted')new Notification('HOME PM',{body:`${r.name} · ${r.time}`});
         keys.push(key); changed=true;
       }
     }
   }
-  if(changed)localStorage.setItem("homepmNotified",JSON.stringify(keys.slice(-200)));
+  if(changed)localStorage.setItem("homepmNotified",JSON.stringify(keys.slice(-300)));
 }
 setInterval(checkReminders,30000);
 
