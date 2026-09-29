@@ -39,6 +39,24 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;ma
 .back-btn{background:rgba(255,255,255,.88);margin-bottom:10px;padding:8px 12px}
 .view-title{font-size:24px;margin:0 0 4px;background:rgba(255,255,255,.88);display:inline-block;padding:4px 10px;border-radius:12px}
 .view-subtitle{color:#777;font-size:13px;margin:0 0 14px}
+
+.calendar-shell{background:rgba(255,255,255,.94);border-radius:22px;padding:16px;box-shadow:0 1px 3px #0000000a}
+.calendar-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.calendar-month{font-size:20px;font-weight:700;text-align:center;flex:1}
+.calendar-nav{background:#f4f1ec;padding:9px 12px;font-size:18px;line-height:1}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.calendar-weekday{font-size:11px;color:#888;text-align:center;padding:4px 0}
+.calendar-day{min-height:78px;border:1px solid #eee;border-radius:14px;background:#fff;padding:7px;cursor:pointer;text-align:left;overflow:hidden}
+.calendar-day:hover{border-color:#ccc}
+.calendar-day.other-month{background:#fafafa;color:#bbb}
+.calendar-day.today{border:2px solid #171717;padding:6px}
+.day-number{font-size:13px;font-weight:700;margin-bottom:5px}
+.calendar-task{display:block;font-size:10px;line-height:1.25;background:#f4f1ec;border-radius:7px;padding:3px 4px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.calendar-task.done{text-decoration:line-through;opacity:.55}
+.calendar-more{font-size:10px;color:#888;margin-top:3px}
+.selected-date{margin-top:16px}
+.selected-date-title{font-size:17px;font-weight:700;margin-bottom:8px}
+@media(max-width:560px){.project-grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.stats .stat:last-child{grid-column:1/-1}.calendar-grid{gap:4px}.calendar-day{min-height:68px;padding:5px}.calendar-day.today{padding:4px}.calendar-task{font-size:9px}.calendar-month{font-size:18px}}
 @media(max-width:560px){.project-grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.stats .stat:last-child{grid-column:1/-1}}
 </style>
 </head>
@@ -56,6 +74,7 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;ma
     </div>
     <section><div class="section-title">📚 Навчання</div><div id="learning"></div></section>
     <section><div class="section-title">📅 Найближчі</div><div id="upcoming"></div></section>
+    <section><div class="section-title">✅ Виконані</div><div id="completed"></div></section>
   </div>
 
   <div id="projectsView" style="display:none">
@@ -72,15 +91,34 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;ma
     </div>
   </div>
 
-  <div id="placeholderView" style="display:none">
-    <header><div><h2 class="view-title" id="placeholderTitle"></h2><div class="view-subtitle" id="placeholderText"></div></div></header>
+  <div id="calendarView" style="display:none">
+    <header>
+      <div><h2 class="view-title">📅 Календар</h2><div class="view-subtitle">Дедлайни та задачі по днях</div></div>
+      <button class="add" onclick="openModal()">+ Задача</button>
+    </header>
+    <section class="calendar-shell">
+      <div class="calendar-head">
+        <button class="calendar-nav" onclick="changeMonth(-1)" title="Попередній місяць">‹</button>
+        <div class="calendar-month" id="calendarMonth"></div>
+        <button class="calendar-nav" onclick="changeMonth(1)" title="Наступний місяць">›</button>
+      </div>
+      <div style="display:flex;justify-content:center;margin-bottom:12px">
+        <button class="back-btn" onclick="goToToday()">Сьогодні</button>
+      </div>
+      <div class="calendar-grid" id="calendarGrid"></div>
+      <div class="selected-date" id="selectedDatePanel"></div>
+    </section>
+  </div>
+
+  <div id="settingsView" style="display:none">
+    <header><div><h2 class="view-title">⚙ Налаштування</h2><div class="view-subtitle">Поки що тут буде місце для налаштувань HOME PM</div></div></header>
   </div>
 </div>
 
 <nav>
   <button class="nav-btn active" id="navHome" onclick="showView('home')"><span class="nav-icon">⌂</span>Головна</button>
   <button class="nav-btn" id="navProjects" onclick="showView('projects')"><span class="nav-icon">▦</span>Проєкти</button>
-  <button class="nav-btn" id="navCalendar" onclick="showView('calendar')"><span class="nav-icon">□</span>Календар</button>
+  <button class="nav-btn" id="navCalendar" onclick="showView('calendar')"><span class="nav-icon">📅</span>Календар</button>
   <button class="nav-btn" id="navSettings" onclick="showView('settings')"><span class="nav-icon">⚙</span>Налаштування</button>
 </nav>
 
@@ -137,6 +175,10 @@ const today=new Date().toISOString().slice(0,10);
 document.getElementById("date").textContent=new Date().toLocaleDateString("uk-UA",{day:"numeric",month:"long",year:"numeric"});
 let currentTaskId=null;
 let currentProject=null;
+let currentView="home";
+let calendarDate=new Date();
+calendarDate.setDate(1);
+let selectedDate=new Date().toISOString().slice(0,10);
 
 function openTask(id){
  currentTaskId=id; let t=tasks.find(x=>x.id===id); if(!t)return;
@@ -181,15 +223,21 @@ function render(){
  document.getElementById("today").textContent=td;
  document.getElementById("progress").textContent=pr;
  let active=tasks.filter(t=>!t.done).sort((a,b)=>a.due.localeCompare(b.due));
+ let completed=tasks.filter(t=>t.done).sort((a,b)=>b.due.localeCompare(a.due));
  document.getElementById("learning").innerHTML=active.slice(0,4).map(card).join("")||'<div class="empty">Задач поки немає</div>';
  document.getElementById("upcoming").innerHTML=active.slice(4).map(card).join("")||'<div class="empty">Усе під контролем ✨</div>';
+ let completedSection=document.getElementById("completed");
+ if(completedSection){
+   completedSection.innerHTML=completed.map(card).join("")||'<div class="empty">Поки немає виконаних задач</div>';
+ }
  renderProjects();
  if(currentProject)renderProjectTasks();
+ if(currentView==="calendar")renderCalendar();
 }
 function card(t){
  return `<div class="task ${t.done?'done':''}">
  <button class="check" onclick="event.stopPropagation();toggle(${t.id})">${t.done?'✓':''}</button>
- <div class="task-text" onclick="openTask(${t.id})"><div class="subject">${t.subject||'Без проєкту'} · ${format(t.due)}</div><div class="name">${t.name}</div></div>
+ <div class="task-text" onclick="openTask(${t.id})"><div class="subject">${escapeHtml(t.subject||'Без проєкту')} · ${format(t.due)}</div><div class="name">${escapeHtml(t.name)}</div></div>
  ${t.done?`<button onclick="event.stopPropagation();deleteTask(${t.id})" title="Видалити" style="background:none;padding:5px;font-size:18px">🗑️</button>`:""}
  </div>`;
 }
@@ -224,15 +272,112 @@ function renderProjectTasks(){
  document.getElementById('projectTasks').innerHTML=list.map(card).join('')||'<div class="empty">У цьому напрямку задач поки немає</div>';
 }
 function showView(view){
+ currentView=view;
  document.getElementById('homeView').style.display=view==='home'?'block':'none';
  document.getElementById('projectsView').style.display=view==='projects'?'block':'none';
- document.getElementById('placeholderView').style.display=(view==='calendar'||view==='settings')?'block':'none';
+ document.getElementById('calendarView').style.display=view==='calendar'?'block':'none';
+ document.getElementById('settingsView').style.display=view==='settings'?'block':'none';
  ['navHome','navProjects','navCalendar','navSettings'].forEach(id=>document.getElementById(id).classList.remove('active'));
- const map={home:'navHome',projects:'navProjects',calendar:'navCalendar',settings:'navSettings'};document.getElementById(map[view]).classList.add('active');
- if(view==='calendar'){document.getElementById('placeholderTitle').textContent='□ Календар';document.getElementById('placeholderText').textContent='Наступним кроком зробимо тут календар дедлайнів.'}
- if(view==='settings'){document.getElementById('placeholderTitle').textContent='⚙ Налаштування';document.getElementById('placeholderText').textContent='Поки що тут буде місце для налаштувань HOME PM.'}
- if(view==='projects'){showProjectList()}
+ const map={home:'navHome',projects:'navProjects',calendar:'navCalendar',settings:'navSettings'};
+ document.getElementById(map[view]).classList.add('active');
+ if(view==='projects')showProjectList();
+ if(view==='calendar')renderCalendar();
 }
+
+function changeMonth(delta){
+ calendarDate.setMonth(calendarDate.getMonth()+delta);
+ selectedDate=null;
+ renderCalendar();
+}
+
+function goToToday(){
+ const now=new Date();
+ calendarDate=new Date(now.getFullYear(),now.getMonth(),1);
+ selectedDate=now.toISOString().slice(0,10);
+ renderCalendar();
+}
+
+function isoDateLocal(year,month,day){
+ return `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+}
+
+function monthLabel(date){
+ return date.toLocaleDateString('uk-UA',{month:'long',year:'numeric'});
+}
+
+function renderCalendar(){
+ const grid=document.getElementById('calendarGrid');
+ const monthTitle=document.getElementById('calendarMonth');
+ const panel=document.getElementById('selectedDatePanel');
+ if(!grid||!monthTitle||!panel)return;
+ const year=calendarDate.getFullYear();
+ const month=calendarDate.getMonth();
+ monthTitle.textContent=monthLabel(calendarDate);
+ const firstOffset=(new Date(year,month,1).getDay()+6)%7;
+ const daysInMonth=new Date(year,month+1,0).getDate();
+ const daysInPrevMonth=new Date(year,month,0).getDate();
+ const weekdays=['Пн','Вт','Ср','Чт','Пт','Сб','Нд'];
+ let html=weekdays.map(d=>`<div class="calendar-weekday">${d}</div>`).join('');
+ for(let i=firstOffset-1;i>=0;i--){
+   const day=daysInPrevMonth-i;
+   const d=isoDateLocal(year,month-1,day);
+   html+=dayCell(d,day,true);
+ }
+ for(let day=1;day<=daysInMonth;day++){
+   const d=isoDateLocal(year,month,day);
+   html+=dayCell(d,day,false);
+ }
+ const totalCells=firstOffset+daysInMonth;
+ const trailing=(7-totalCells%7)%7;
+ for(let day=1;day<=trailing;day++){
+   const d=isoDateLocal(year,month+1,day);
+   html+=dayCell(d,day,true);
+ }
+ grid.innerHTML=html;
+ renderSelectedDate();
+}
+
+function dayCell(dateStr,day,otherMonth){
+ const dayTasks=tasks.filter(t=>t.due===dateStr);
+ const nowToday=dateStr===today;
+ const selected=dateStr===selectedDate;
+ let classes='calendar-day';
+ if(otherMonth)classes+=' other-month';
+ if(nowToday)classes+=' today';
+ const parts=dayTasks.slice(0,3).map(t=>`<span class="calendar-task ${t.done?'done':''}">${escapeHtml(t.name)}</span>`).join('');
+ const more=dayTasks.length>3?`<div class="calendar-more">+${dayTasks.length-3} ще</div>`:'';
+ const outline=selected?'outline:2px solid #999;outline-offset:-2px;':'';
+ return `<div class="${classes}" style="${outline}" onclick="selectCalendarDate('${dateStr}')"><div class="day-number">${day}</div>${parts}${more}</div>`;
+}
+
+function selectCalendarDate(dateStr){
+ selectedDate=dateStr;
+ const d=new Date(dateStr+'T12:00');
+ if(d.getFullYear()!==calendarDate.getFullYear()||d.getMonth()!==calendarDate.getMonth()){
+   calendarDate=new Date(d.getFullYear(),d.getMonth(),1);
+   renderCalendar();
+ }else{
+   renderCalendar();
+ }
+}
+
+function renderSelectedDate(){
+ const panel=document.getElementById('selectedDatePanel');
+ if(!panel)return;
+ if(!selectedDate){
+   panel.innerHTML='<div class="empty">Оберіть дату, щоб побачити задачі</div>';
+   return;
+ }
+ const d=new Date(selectedDate+'T12:00');
+ const title=d.toLocaleDateString('uk-UA',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+ const dayTasks=tasks.filter(t=>t.due===selectedDate).sort((a,b)=>Number(a.done)-Number(b.done)||a.name.localeCompare(b.name,'uk'));
+ panel.innerHTML=`<div class="selected-date-title">${title}</div>${dayTasks.map(card).join('')||'<div class="empty">На цей день задач немає ✨</div>'}`;
+}
+
+function escapeHtml(value){
+ return String(value??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+}
+
 render();
 </script>
 </body></html>
