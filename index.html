@@ -242,7 +242,6 @@ function openTask(id){
  document.getElementById("taskCategory").value=t.category||"Особисте";
  document.getElementById("taskStatus").value=t.done?"done":(t.status||"todo");
  document.getElementById("taskComment").value=t.comment||"";
- document.getElementById("taskTitle").textContent=t.name||"Редагування задачі";
  renderSubtasks(); document.getElementById("taskModal").style.display="flex";
 }
 function closeTask(){document.getElementById("taskModal").style.display="none";currentTaskId=null;render()}
