@@ -105,13 +105,34 @@ function render(){
 let overdue=tasks.filter(t=>!t.done&&t.due<today).length;
 let td=tasks.filter(t=>!t.done&&t.due===today).length;
 let pr=tasks.filter(t=>!t.done&&t.status==="progress").length;
+
 document.getElementById("overdue").textContent=overdue;
 document.getElementById("today").textContent=td;
 document.getElementById("progress").textContent=pr;
+
 let active=tasks.filter(t=>!t.done).sort((a,b)=>a.due.localeCompare(b.due));
-let learn=active.filter(t=>t.subject);
-document.getElementById("learning").innerHTML=learn.slice(0,4).map(card).join("")||'<div class="empty">Задач поки немає</div>';
-document.getElementById("upcoming").innerHTML=active.slice(4).map(card).join("")||'<div class="empty">Усе під контролем ✨</div>';
+let completed=tasks.filter(t=>t.done).sort((a,b)=>b.due.localeCompare(a.due));
+
+document.getElementById("learning").innerHTML=
+active.slice(0,4).map(card).join("")||
+'<div class="empty">Задач поки немає</div>';
+
+document.getElementById("upcoming").innerHTML=
+active.slice(4).map(card).join("")||
+'<div class="empty">Усе під контролем ✨</div>';
+
+let completedSection=document.getElementById("completed");
+
+if(!completedSection){
+let section=document.createElement("section");
+section.innerHTML='<div class="section-title">✅ Виконані</div><div id="completed"></div>';
+document.querySelector(".app").appendChild(section);
+completedSection=document.getElementById("completed");
+}
+
+completedSection.innerHTML=
+completed.map(card).join("")||
+'<div class="empty">Поки немає виконаних задач</div>';
 }
 function card(t){
 return `<div class="task ${t.done?'done':''}">
