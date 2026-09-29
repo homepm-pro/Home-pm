@@ -6,85 +6,155 @@
 <title>HOME PM</title>
 <style>
 :root{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#171717;background:#f5f5f7}
-*{box-sizing:border-box} body{margin:0;background:#f7f0e7 url("cats-bg.png") center top/700px auto repeat;background-attachment:fixed}.app{max-width:700px;margin:auto;padding:24px 18px 90px}
-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px}
-h1{font-size:30px;margin:0;letter-spacing:-1px;display:inline-block;background:rgba(255,255,255,.88);padding:4px 12px;border-radius:12px}.date{color:#777;font-size:14px;margin-top:4px}
+*{box-sizing:border-box}
+body{margin:0;background:#f7f0e7 url("cats-bg.png") center top/700px auto repeat;background-attachment:fixed}
+.app{max-width:700px;margin:auto;padding:24px 18px 90px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;gap:12px}
+h1{font-size:30px;margin:0;letter-spacing:-1px;display:inline-block;background:rgba(255,255,255,.88);padding:4px 12px;border-radius:12px}
+.date{color:#777;font-size:14px;margin-top:4px}
 button{border:0;border-radius:14px;padding:11px 15px;font-weight:600;cursor:pointer}
-.add{background:#171717;color:white;font-size:15px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px}
+.add{background:#171717;color:white;font-size:15px;white-space:nowrap}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:24px}
 .stat{background:white;border-radius:18px;padding:15px}.stat b{display:block;font-size:22px}.stat span{color:#777;font-size:12px}
-section{margin:22px 0}.section-title{display:inline-block;font-size:18px;font-weight:700;margin-bottom:10px;background:rgba(255,255,255,.88);padding:4px 10px;border-radius:10px;position:relative;z-index:2}
+section{margin:22px 0}
+.section-title{display:inline-block;font-size:18px;font-weight:700;margin-bottom:10px;background:rgba(255,255,255,.88);padding:4px 10px;border-radius:10px;position:relative;z-index:2}
 .task{background:white;border-radius:17px;padding:14px 15px;margin:9px 0;display:flex;gap:12px;align-items:center;box-shadow:0 1px 3px #00000008}
-.check{width:24px;height:24px;border:2px solid #bbb;border-radius:50%;padding:0;background:white;flex:none}
-.task.done{opacity:.6}.task.done .name{text-decoration:line-through}.task-text{flex:1;cursor:pointer}.subject{font-size:12px;color:#777;margin-bottom:3px}.name{font-size:15px;font-weight:600}
+.check{width:24px;height:24px;border:2px solid #bbb;border-radius:50%;padding:0;background:white;flex:none;display:flex;align-items:center;justify-content:center}
+.task.done{opacity:.6}.task.done .name{text-decoration:line-through}
+.task-text{flex:1;cursor:pointer}.subject{font-size:12px;color:#777;margin-bottom:3px}.name{font-size:15px;font-weight:600}
 .empty{color:#888;background:white;border-radius:16px;padding:20px;text-align:center}
-nav{position:fixed;bottom:0;left:0;right:0;background:#fffffff2;backdrop-filter:blur(12px);display:flex;justify-content:center;gap:34px;padding:12px}
-nav span{font-size:12px;color:#666}.modal{display:none;position:fixed;inset:0;background:#0005;align-items:flex-end;justify-content:center}.sheet{background:white;width:100%;max-width:700px;border-radius:25px 25px 0 0;padding:22px}
+nav{position:fixed;bottom:0;left:0;right:0;background:#fffffff2;backdrop-filter:blur(12px);display:flex;justify-content:center;gap:26px;padding:10px 8px;z-index:20}
+.nav-btn{background:transparent;padding:3px 10px;color:#666;font-size:12px;font-weight:500;border-radius:12px}
+.nav-btn.active{background:#f0ece6;color:#171717;font-weight:700}
+.nav-icon{font-size:18px;line-height:18px;display:block;margin-bottom:2px}
+.modal{display:none;position:fixed;inset:0;background:#0005;align-items:flex-end;justify-content:center;z-index:30}
+.sheet{background:white;width:100%;max-width:700px;border-radius:25px 25px 0 0;padding:22px;max-height:90vh;overflow:auto}
 input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;margin:7px 0 14px;font-size:16px}
 .row{display:flex;gap:10px}.row>*{flex:1}label{display:block;font-size:13px;color:#777;margin-top:8px}.save{width:100%;background:#171717;color:white}
+.project-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.project-card{background:white;border-radius:20px;padding:18px 14px;box-shadow:0 1px 3px #0000000a;cursor:pointer;border:1px solid transparent}
+.project-card:hover{border-color:#ddd}
+.project-card .emoji{font-size:30px;display:block;margin-bottom:8px}
+.project-card b{display:block;font-size:16px}.project-card span{display:block;color:#777;font-size:12px;margin-top:4px}
+.back-btn{background:rgba(255,255,255,.88);margin-bottom:10px;padding:8px 12px}
+.view-title{font-size:24px;margin:0 0 4px;background:rgba(255,255,255,.88);display:inline-block;padding:4px 10px;border-radius:12px}
+.view-subtitle{color:#777;font-size:13px;margin:0 0 14px}
+@media(max-width:560px){.project-grid{grid-template-columns:1fr}.stats{grid-template-columns:1fr 1fr}.stats .stat:last-child{grid-column:1/-1}}
 </style>
 </head>
 <body>
 <div class="app">
-<header><div><h1>HOME PM</h1><div class="date" id="date"></div></div><button class="add" onclick="openModal()">+ Задача</button></header>
-<div class="stats">
-<div class="stat"><b id="overdue">0</b><span>Прострочені</span></div>
-<div class="stat"><b id="today">0</b><span>Сьогодні</span></div>
-<div class="stat"><b id="progress">0</b><span>У процесі</span></div>
+  <div id="homeView">
+    <header>
+      <div><h1>HOME PM</h1><div class="date" id="date"></div></div>
+      <button class="add" onclick="openModal()">+ Задача</button>
+    </header>
+    <div class="stats">
+      <div class="stat"><b id="overdue">0</b><span>Прострочені</span></div>
+      <div class="stat"><b id="today">0</b><span>Сьогодні</span></div>
+      <div class="stat"><b id="progress">0</b><span>У процесі</span></div>
+    </div>
+    <section><div class="section-title">📚 Навчання</div><div id="learning"></div></section>
+    <section><div class="section-title">📅 Найближчі</div><div id="upcoming"></div></section>
+  </div>
+
+  <div id="projectsView" style="display:none">
+    <header>
+      <div><h2 class="view-title">📁 Проєкти</h2><div class="view-subtitle">Твої основні напрямки</div></div>
+      <button class="add" onclick="openModal()">+ Задача</button>
+    </header>
+    <div id="projectsHome">
+      <section><div class="section-title">Оберемо напрямок</div><div class="project-grid" id="projectGrid"></div></section>
+    </div>
+    <div id="projectDetail" style="display:none">
+      <button class="back-btn" onclick="showProjectList()">← Всі проєкти</button>
+      <section><div class="section-title" id="projectDetailTitle"></div><div id="projectTasks"></div></section>
+    </div>
+  </div>
+
+  <div id="placeholderView" style="display:none">
+    <header><div><h2 class="view-title" id="placeholderTitle"></h2><div class="view-subtitle" id="placeholderText"></div></div></header>
+  </div>
 </div>
-<section><div class="section-title">📚 Навчання</div><div id="learning"></div></section>
-<section><div class="section-title">📅 Найближчі</div><div id="upcoming"></div></section>
-</div>
-<nav><span>⌂<br>Головна</span><span>▦<br>Проєкти</span><span>□<br>Календар</span><span>⚙<br>Налаштування</span></nav>
+
+<nav>
+  <button class="nav-btn active" id="navHome" onclick="showView('home')"><span class="nav-icon">⌂</span>Головна</button>
+  <button class="nav-btn" id="navProjects" onclick="showView('projects')"><span class="nav-icon">▦</span>Проєкти</button>
+  <button class="nav-btn" id="navCalendar" onclick="showView('calendar')"><span class="nav-icon">□</span>Календар</button>
+  <button class="nav-btn" id="navSettings" onclick="showView('settings')"><span class="nav-icon">⚙</span>Налаштування</button>
+</nav>
 
 <div class="modal" id="modal" onclick="if(event.target===this)closeModal()">
-<div class="sheet">
-<h2>Нова задача</h2>
-<input id="name" placeholder="Назва задачі">
-<div class="row"><input id="subject" placeholder="Проєкт / предмет"><input id="due" type="date"></div>
-<select id="status"><option value="todo">Не розпочато</option><option value="progress">У процесі</option></select>
-<button class="save" onclick="addTask()">Додати задачу</button>
-</div></div>
-
+  <div class="sheet">
+    <h2>Нова задача</h2>
+    <input id="name" placeholder="Назва задачі">
+    <label>Напрямок</label>
+    <select id="category">
+      <option value="Навчання">👦 Навчання</option>
+      <option value="Робота">💼 Робота</option>
+      <option value="Особисте">🏠 Особисте</option>
+    </select>
+    <div class="row"><input id="subject" placeholder="Предмет / проєкт"><input id="due" type="date"></div>
+    <select id="status"><option value="todo">Не розпочато</option><option value="progress">У процесі</option></select>
+    <button class="save" onclick="addTask()">Додати задачу</button>
+  </div>
+</div>
 
 <div class="modal" id="taskModal" onclick="if(event.target===this)closeTask()">
-<div class="sheet">
-<h2 id="taskTitle"></h2>
-<div class="subject" id="taskMeta"></div>
-<label>Статус</label>
-<select id="taskStatus" onchange="updateTaskStatus()">
-<option value="todo">Не розпочато</option><option value="progress">У процесі</option><option value="done">Виконано</option>
-</select>
-<label>Підзадачі</label>
-<div id="subtasks"></div>
-<div class="row"><input id="subtaskInput" placeholder="Нова підзадача"><button onclick="addSubtask()">+</button></div>
-<label>Коментар</label>
-<input id="taskComment" placeholder="Додати коментар" onchange="updateComment()">
-<button class="save" onclick="closeTask()">Готово</button>
-</div></div>
+  <div class="sheet">
+    <h2 id="taskTitle"></h2>
+    <div class="subject" id="taskMeta"></div>
+    <label>Напрямок</label>
+    <select id="taskCategory" onchange="updateTaskCategory()">
+      <option value="Навчання">👦 Навчання</option>
+      <option value="Робота">💼 Робота</option>
+      <option value="Особисте">🏠 Особисте</option>
+    </select>
+    <label>Статус</label>
+    <select id="taskStatus" onchange="updateTaskStatus()">
+      <option value="todo">Не розпочато</option><option value="progress">У процесі</option><option value="done">Виконано</option>
+    </select>
+    <label>Підзадачі</label>
+    <div id="subtasks"></div>
+    <div class="row"><input id="subtaskInput" placeholder="Нова підзадача"><button onclick="addSubtask()">+</button></div>
+    <label>Коментар</label>
+    <input id="taskComment" placeholder="Додати коментар" onchange="updateComment()">
+    <button class="save" onclick="closeTask()">Готово</button>
+  </div>
+</div>
+
 <script>
 const seed=[
-{id:1,name:"Записати есе на відео",subject:"Українська мова",due:"2026-09-29",status:"todo",done:false,subtasks:[],comment:""},
-{id:2,name:"Зробити презентацію",subject:"Хімія",due:"2026-09-29",status:"todo",done:false,subtasks:[],comment:""},
-{id:3,name:"Вивчити вірш",subject:"Українська література",due:"2026-09-30",status:"todo",done:false,subtasks:[],comment:""},
-{id:4,name:"Виконати вправу",subject:"Фізика",due:"2026-10-01",status:"todo",done:false,subtasks:[],comment:""}
+{id:1,name:"Записати есе на відео",subject:"Українська мова",category:"Навчання",due:"2026-09-29",status:"todo",done:false,subtasks:[],comment:""},
+{id:2,name:"Зробити презентацію",subject:"Хімія",category:"Навчання",due:"2026-09-29",status:"todo",done:false,subtasks:[],comment:""},
+{id:3,name:"Вивчити вірш",subject:"Українська література",category:"Навчання",due:"2026-09-30",status:"todo",done:false,subtasks:[],comment:""},
+{id:4,name:"Виконати вправу",subject:"Фізика",category:"Навчання",due:"2026-10-01",status:"todo",done:false,subtasks:[],comment:""}
 ];
 let tasks=JSON.parse(localStorage.getItem("homepm")||"null")||seed;
+tasks=tasks.map(t=>({...t,category:t.category||"Навчання",subtasks:t.subtasks||[],comment:t.comment||""}));
+localStorage.setItem("homepm",JSON.stringify(tasks));
 const today=new Date().toISOString().slice(0,10);
 document.getElementById("date").textContent=new Date().toLocaleDateString("uk-UA",{day:"numeric",month:"long",year:"numeric"});
 let currentTaskId=null;
+let currentProject=null;
+
 function openTask(id){
  currentTaskId=id; let t=tasks.find(x=>x.id===id); if(!t)return;
- t.subtasks=t.subtasks||[]; t.comment=t.comment||"";
  document.getElementById("taskTitle").textContent=t.name;
- document.getElementById("taskMeta").textContent=t.subject+" · дедлайн "+format(t.due);
+ document.getElementById("taskMeta").textContent=(t.subject||"Без проєкту")+" · дедлайн "+format(t.due);
+ document.getElementById("taskCategory").value=t.category||"Особисте";
  document.getElementById("taskStatus").value=t.done?"done":t.status;
- document.getElementById("taskComment").value=t.comment;
+ document.getElementById("taskComment").value=t.comment||"";
  renderSubtasks(); document.getElementById("taskModal").style.display="flex";
 }
 function closeTask(){document.getElementById("taskModal").style.display="none";currentTaskId=null;render()}
 function updateTaskStatus(){
  let t=tasks.find(x=>x.id===currentTaskId); if(!t)return;
  let v=document.getElementById("taskStatus").value; t.status=v==="done"?"todo":v; t.done=v==="done"; save();
+}
+function updateTaskCategory(){
+ let t=tasks.find(x=>x.id===currentTaskId); if(!t)return;
+ t.category=document.getElementById("taskCategory").value; save();
 }
 function updateComment(){
  let t=tasks.find(x=>x.id===currentTaskId); if(t){t.comment=document.getElementById("taskComment").value;save();}
@@ -96,64 +166,72 @@ function renderSubtasks(){
 }
 function addSubtask(){
  let input=document.getElementById("subtaskInput"), name=input.value.trim(); if(!name)return;
- let t=tasks.find(x=>x.id===currentTaskId); t.subtasks.push({name,done:false}); input.value=""; save(); renderSubtasks();
+ let t=tasks.find(x=>x.id===currentTaskId); if(!t)return;
+ t.subtasks=t.subtasks||[]; t.subtasks.push({name,done:false}); input.value=""; save(); renderSubtasks();
 }
 function toggleSubtask(i){
- let t=tasks.find(x=>x.id===currentTaskId); t.subtasks[i].done=!t.subtasks[i].done; save(); renderSubtasks();
+ let t=tasks.find(x=>x.id===currentTaskId); if(!t)return;
+ t.subtasks[i].done=!t.subtasks[i].done; save(); renderSubtasks();
 }
 function render(){
-  let overdue=tasks.filter(t=>!t.done&&t.due<today).length;
-  let td=tasks.filter(t=>!t.done&&t.due===today).length;
-  let pr=tasks.filter(t=>!t.done&&t.status==="progress").length;
-
-  document.getElementById("overdue").textContent=overdue;
-  document.getElementById("today").textContent=td;
-  document.getElementById("progress").textContent=pr;
-
-  let active=tasks.filter(t=>!t.done).sort((a,b)=>a.due.localeCompare(b.due));
-  let completed=tasks.filter(t=>t.done).sort((a,b)=>b.due.localeCompare(a.due));
-
-  document.getElementById("learning").innerHTML=active.slice(0,4).map(card).join("")||'<div class="empty">Задач поки немає</div>';
-  document.getElementById("upcoming").innerHTML=active.slice(4).map(card).join("")||'<div class="empty">Усе під контролем ✨</div>';
-
-  let completedSection=document.getElementById("completed");
-  if(!completedSection){
-    let section=document.createElement("section");
-    section.innerHTML='<div class="section-title">✅ Виконані</div><div id="completed"></div>';
-    document.querySelector(".app").appendChild(section);
-    completedSection=document.getElementById("completed");
-  }
-  completedSection.innerHTML=completed.map(card).join("")||'<div class="empty">Поки немає виконаних задач</div>';
+ let overdue=tasks.filter(t=>!t.done&&t.due<today).length;
+ let td=tasks.filter(t=>!t.done&&t.due===today).length;
+ let pr=tasks.filter(t=>!t.done&&t.status==="progress").length;
+ document.getElementById("overdue").textContent=overdue;
+ document.getElementById("today").textContent=td;
+ document.getElementById("progress").textContent=pr;
+ let active=tasks.filter(t=>!t.done).sort((a,b)=>a.due.localeCompare(b.due));
+ document.getElementById("learning").innerHTML=active.slice(0,4).map(card).join("")||'<div class="empty">Задач поки немає</div>';
+ document.getElementById("upcoming").innerHTML=active.slice(4).map(card).join("")||'<div class="empty">Усе під контролем ✨</div>';
+ renderProjects();
+ if(currentProject)renderProjectTasks();
 }
-
 function card(t){
-return `<div class="task ${t.done?'done':''}">
-<button class="check" onclick="event.stopPropagation();toggle(${t.id})">${t.done?'✓':''}</button>
-<div class="task-text" onclick="openTask(${t.id})"><div class="subject">${t.subject} · ${format(t.due)}</div><div class="name">${t.name}</div></div>
-${t.done?`<button onclick="event.stopPropagation();deleteTask(${t.id})" title="Видалити" style="background:none;padding:5px;font-size:18px">🗑️</button>`:""}
-</div>`;
+ return `<div class="task ${t.done?'done':''}">
+ <button class="check" onclick="event.stopPropagation();toggle(${t.id})">${t.done?'✓':''}</button>
+ <div class="task-text" onclick="openTask(${t.id})"><div class="subject">${t.subject||'Без проєкту'} · ${format(t.due)}</div><div class="name">${t.name}</div></div>
+ ${t.done?`<button onclick="event.stopPropagation();deleteTask(${t.id})" title="Видалити" style="background:none;padding:5px;font-size:18px">🗑️</button>`:""}
+ </div>`;
 }
 function format(d){return new Date(d+"T12:00").toLocaleDateString("uk-UA",{day:"2-digit",month:"2-digit"})}
 function toggle(id){
-  let t=tasks.find(x=>x.id===id);
-  if(!t)return;
-  t.done=!t.done;
-  if(t.done)t.status="todo";
-  save();
+ let t=tasks.find(x=>x.id===id); if(!t)return;
+ t.done=!t.done; if(t.done)t.status="todo"; save();
 }
-function deleteTask(id){
-if(confirm("Видалити виконану задачу?")){
-tasks=tasks.filter(t=>t.id!==id);
-save();
-}
-}
+function deleteTask(id){if(confirm("Видалити виконану задачу?")){tasks=tasks.filter(t=>t.id!==id);save();}}
 function save(){localStorage.setItem("homepm",JSON.stringify(tasks));render()}
 function openModal(){document.getElementById("modal").style.display="flex";document.getElementById("due").value=today}
 function closeModal(){document.getElementById("modal").style.display="none"}
 function addTask(){
-let name=document.getElementById("name").value.trim(); if(!name)return;
-tasks.push({id:Date.now(),name,subject:document.getElementById("subject").value||"Особисте",due:document.getElementById("due").value||today,status:document.getElementById("status").value,done:false,subtasks:[],comment:""});
-save();closeModal();document.getElementById("name").value="";document.getElementById("subject").value="";
+ let name=document.getElementById("name").value.trim(); if(!name)return;
+ tasks.push({id:Date.now(),name,category:document.getElementById("category").value,subject:document.getElementById("subject").value||"Без проєкту",due:document.getElementById("due").value||today,status:document.getElementById("status").value,done:false,subtasks:[],comment:""});
+ save();closeModal();document.getElementById("name").value="";document.getElementById("subject").value="";
+}
+function renderProjects(){
+ const defs=[['Навчання','👦','Навчання'],['Робота','💼','Робота'],['Особисте','🏠','Особисте']];
+ document.getElementById('projectGrid').innerHTML=defs.map(([label,emoji,key])=>{
+  const count=tasks.filter(t=>t.category===key&&!t.done).length;
+  return `<div class="project-card" onclick="openProject('${key}')"><span class="emoji">${emoji}</span><b>${label}</b><span>${count} ${count===1?'активна задача':count<5?'активні задачі':'активних задач'}</span></div>`;
+ }).join('');
+}
+function openProject(name){currentProject=name;document.getElementById('projectsHome').style.display='none';document.getElementById('projectDetail').style.display='block';renderProjectTasks()}
+function showProjectList(){currentProject=null;document.getElementById('projectsHome').style.display='block';document.getElementById('projectDetail').style.display='none';renderProjects()}
+function renderProjectTasks(){
+ if(!currentProject)return;
+ const icons={Навчання:'👦',Робота:'💼',Особисте:'🏠'};
+ document.getElementById('projectDetailTitle').textContent=icons[currentProject]+' '+currentProject;
+ const list=tasks.filter(t=>t.category===currentProject).sort((a,b)=>Number(a.done)-Number(b.done)||a.due.localeCompare(b.due));
+ document.getElementById('projectTasks').innerHTML=list.map(card).join('')||'<div class="empty">У цьому напрямку задач поки немає</div>';
+}
+function showView(view){
+ document.getElementById('homeView').style.display=view==='home'?'block':'none';
+ document.getElementById('projectsView').style.display=view==='projects'?'block':'none';
+ document.getElementById('placeholderView').style.display=(view==='calendar'||view==='settings')?'block':'none';
+ ['navHome','navProjects','navCalendar','navSettings'].forEach(id=>document.getElementById(id).classList.remove('active'));
+ const map={home:'navHome',projects:'navProjects',calendar:'navCalendar',settings:'navSettings'};document.getElementById(map[view]).classList.add('active');
+ if(view==='calendar'){document.getElementById('placeholderTitle').textContent='□ Календар';document.getElementById('placeholderText').textContent='Наступним кроком зробимо тут календар дедлайнів.'}
+ if(view==='settings'){document.getElementById('placeholderTitle').textContent='⚙ Налаштування';document.getElementById('placeholderText').textContent='Поки що тут буде місце для налаштувань HOME PM.'}
+ if(view==='projects'){showProjectList()}
 }
 render();
 </script>
