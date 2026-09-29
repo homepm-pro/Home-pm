@@ -102,38 +102,30 @@ function toggleSubtask(i){
  let t=tasks.find(x=>x.id===currentTaskId); t.subtasks[i].done=!t.subtasks[i].done; save(); renderSubtasks();
 }
 function render(){
-let overdue=tasks.filter(t=>!t.done&&t.due<today).length;
-let td=tasks.filter(t=>!t.done&&t.due===today).length;
-let pr=tasks.filter(t=>!t.done&&t.status==="progress").length;
+  let overdue=tasks.filter(t=>!t.done&&t.due<today).length;
+  let td=tasks.filter(t=>!t.done&&t.due===today).length;
+  let pr=tasks.filter(t=>!t.done&&t.status==="progress").length;
 
-document.getElementById("overdue").textContent=overdue;
-document.getElementById("today").textContent=td;
-document.getElementById("progress").textContent=pr;
+  document.getElementById("overdue").textContent=overdue;
+  document.getElementById("today").textContent=td;
+  document.getElementById("progress").textContent=pr;
 
-let active=tasks.filter(t=>!t.done).sort((a,b)=>a.due.localeCompare(b.due));
-let completed=tasks.filter(t=>t.done).sort((a,b)=>b.due.localeCompare(a.due));
+  let active=tasks.filter(t=>!t.done).sort((a,b)=>a.due.localeCompare(b.due));
+  let completed=tasks.filter(t=>t.done).sort((a,b)=>b.due.localeCompare(a.due));
 
-document.getElementById("learning").innerHTML=
-active.slice(0,4).map(card).join("")||
-'<div class="empty">Задач поки немає</div>';
+  document.getElementById("learning").innerHTML=active.slice(0,4).map(card).join("")||'<div class="empty">Задач поки немає</div>';
+  document.getElementById("upcoming").innerHTML=active.slice(4).map(card).join("")||'<div class="empty">Усе під контролем ✨</div>';
 
-document.getElementById("upcoming").innerHTML=
-active.slice(4).map(card).join("")||
-'<div class="empty">Усе під контролем ✨</div>';
-
-let completedSection=document.getElementById("completed");
-
-if(!completedSection){
-let section=document.createElement("section");
-section.innerHTML='<div class="section-title">✅ Виконані</div><div id="completed"></div>';
-document.querySelector(".app").appendChild(section);
-completedSection=document.getElementById("completed");
+  let completedSection=document.getElementById("completed");
+  if(!completedSection){
+    let section=document.createElement("section");
+    section.innerHTML='<div class="section-title">✅ Виконані</div><div id="completed"></div>';
+    document.querySelector(".app").appendChild(section);
+    completedSection=document.getElementById("completed");
+  }
+  completedSection.innerHTML=completed.map(card).join("")||'<div class="empty">Поки немає виконаних задач</div>';
 }
 
-completedSection.innerHTML=
-completed.map(card).join("")||
-'<div class="empty">Поки немає виконаних задач</div>';
-}
 function card(t){
 return `<div class="task ${t.done?'done':''}">
 <button class="check" onclick="event.stopPropagation();toggle(${t.id})">${t.done?'✓':''}</button>
@@ -142,7 +134,13 @@ ${t.done?`<button onclick="event.stopPropagation();deleteTask(${t.id})" title="�
 </div>`;
 }
 function format(d){return new Date(d+"T12:00").toLocaleDateString("uk-UA",{day:"2-digit",month:"2-digit"})}
-function toggle(id){tasks=tasks.map(t=>t.id===id?{...t,done:!t.done}:t);save()}
+function toggle(id){
+  let t=tasks.find(x=>x.id===id);
+  if(!t)return;
+  t.done=!t.done;
+  if(t.done)t.status="todo";
+  save();
+}
 function deleteTask(id){
 if(confirm("Видалити виконану задачу?")){
 tasks=tasks.filter(t=>t.id!==id);
