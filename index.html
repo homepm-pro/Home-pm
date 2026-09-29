@@ -18,7 +18,7 @@ button{border:0;border-radius:14px;padding:11px 15px;font-weight:600;cursor:poin
 .stat{background:white;border-radius:18px;padding:15px}.stat b{display:block;font-size:22px}.stat span{color:#777;font-size:12px}
 section{margin:22px 0}
 .section-title{display:inline-block;font-size:18px;font-weight:700;margin-bottom:10px;background:rgba(255,255,255,.88);padding:4px 10px;border-radius:10px;position:relative;z-index:2}
-.section-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.section-row .section-title{margin-bottom:0}.mini-add{background:rgba(255,255,255,.9);padding:7px 10px;border-radius:10px;font-size:12px}.recurring-card{background:white;border-radius:17px;padding:14px 15px;margin:9px 0;box-shadow:0 1px 3px #00000008}.recurring-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.recurring-name{font-size:15px;font-weight:700}.recurring-meta{font-size:12px;color:#777;margin-top:4px}.recurring-next{margin-top:8px;font-size:13px}.recurring-actions{display:flex;gap:6px}.days-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:7px 0 14px}.day-check{position:absolute;opacity:0;pointer-events:none}.day-label{display:flex;align-items:center;justify-content:center;padding:9px 4px;border:1px solid #ddd;border-radius:10px;font-size:12px;cursor:pointer;background:#fff}.day-check:checked + .day-label{background:#171717;color:#fff;border-color:#171717}
+.section-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.section-row .section-title{margin-bottom:0}.mini-add{background:rgba(255,255,255,.9);padding:7px 10px;border-radius:10px;font-size:12px}.section-toggle{background:rgba(255,255,255,.9);width:36px;height:32px;padding:0;border-radius:10px;font-size:16px;display:flex;align-items:center;justify-content:center}.recurring-card{background:white;border-radius:17px;padding:14px 15px;margin:9px 0;box-shadow:0 1px 3px #00000008}.recurring-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.recurring-name{font-size:15px;font-weight:700}.recurring-meta{font-size:12px;color:#777;margin-top:4px}.recurring-next{margin-top:8px;font-size:13px}.recurring-actions{display:flex;gap:6px}.days-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:7px 0 14px}.day-check{position:absolute;opacity:0;pointer-events:none}.day-label{display:flex;align-items:center;justify-content:center;padding:9px 4px;border:1px solid #ddd;border-radius:10px;font-size:12px;cursor:pointer;background:#fff}.day-check:checked + .day-label{background:#171717;color:#fff;border-color:#171717}
 .task{background:white;border-radius:17px;padding:14px 15px;margin:9px 0;display:flex;gap:12px;align-items:center;box-shadow:0 1px 3px #00000008}
 .check{width:24px;height:24px;border:2px solid #bbb;border-radius:50%;padding:0;background:white;flex:none;display:flex;align-items:center;justify-content:center}
 .task.done{opacity:.6}.task.done .name{text-decoration:line-through}
@@ -78,7 +78,7 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;ma
     <section><div class="section-title">📚 Навчання</div><div id="learning"></div></section>
     <section><div class="section-title">💼 Робота</div><div id="work"></div></section>
     <section><div class="section-title">🏠 Особисте</div><div id="personal"></div></section>
-    <section><div class="section-title">📅 Найближчі</div><div id="upcoming"></div></section>
+    <section><div class="section-row"><div class="section-title">📅 Найближчі</div><button class="section-toggle" id="upcomingToggle" onclick="toggleUpcoming()" title="Згорнути/розгорнути">⌄</button></div><div id="upcoming"></div></section>
     <section><div class="section-row"><div class="section-title">🔁 Регулярні задачі</div><div style="display:flex;gap:6px;align-items:center"><button class="mini-add" id="notifyBtn" onclick="enableNotifications()">🔔 Увімкнути нагадування</button><button class="mini-add" onclick="openRecurringModal()">+ Додати</button></div></div><div id="recurring"></div></section>
     <section><div class="section-title">✅ Виконані</div><div id="completed"></div></section>
   </div>
@@ -281,7 +281,12 @@ function render(){
   document.getElementById("work").innerHTML=work.map(card).join("")||'<div class="empty">Активних задач немає</div>';
   document.getElementById("personal").innerHTML=personal.map(card).join("")||'<div class="empty">Активних задач немає</div>';
   const upcoming=active.filter(t=>t.due>=today).slice(0,6);
-  document.getElementById("upcoming").innerHTML=upcoming.map(card).join("")||'<div class="empty">Найближчих задач немає ✨</div>';
+  const upcomingBox=document.getElementById("upcoming");
+  const upcomingToggle=document.getElementById("upcomingToggle");
+  const upcomingCollapsed=localStorage.getItem("homepm_upcoming_collapsed")==="1";
+  upcomingBox.innerHTML=upcoming.map(card).join("")||'<div class="empty">Найближчих задач немає ✨</div>';
+  upcomingBox.style.display=upcomingCollapsed?"none":"block";
+  if(upcomingToggle)upcomingToggle.textContent=upcomingCollapsed?"⌄":"⌃";
   document.getElementById("completed").innerHTML=completed.map(card).join("")||'<div class="empty">Поки немає виконаних задач</div>';
   renderRecurring();
   renderProjects();
@@ -289,6 +294,15 @@ function render(){
   if(currentView==="calendar")renderCalendar();
   updateNotifyButton();
   checkReminders();
+}
+function toggleUpcoming(){
+  const box=document.getElementById("upcoming");
+  const btn=document.getElementById("upcomingToggle");
+  if(!box)return;
+  const collapsed=box.style.display==="none";
+  box.style.display=collapsed?"block":"none";
+  localStorage.setItem("homepm_upcoming_collapsed",collapsed?"0":"1");
+  if(btn)btn.textContent=collapsed?"⌃":"⌄";
 }
 function categoryIcon(category){
  const icons={Навчання:"👦",Робота:"💼",Особисте:"🏠"};
