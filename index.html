@@ -18,6 +18,7 @@ button{border:0;border-radius:14px;padding:11px 15px;font-weight:600;cursor:poin
 .stat{background:white;border-radius:18px;padding:15px}.stat b{display:block;font-size:22px}.stat span{color:#777;font-size:12px}
 section{margin:22px 0}
 .section-title{display:inline-block;font-size:18px;font-weight:700;margin-bottom:10px;background:rgba(255,255,255,.88);padding:4px 10px;border-radius:10px;position:relative;z-index:2}
+.section-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.section-row .section-title{margin-bottom:0}.mini-add{background:rgba(255,255,255,.9);padding:7px 10px;border-radius:10px;font-size:12px}.recurring-card{background:white;border-radius:17px;padding:14px 15px;margin:9px 0;box-shadow:0 1px 3px #00000008}.recurring-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.recurring-name{font-size:15px;font-weight:700}.recurring-meta{font-size:12px;color:#777;margin-top:4px}.recurring-next{margin-top:8px;font-size:13px}.recurring-actions{display:flex;gap:6px}.days-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin:7px 0 14px}.day-check{position:absolute;opacity:0;pointer-events:none}.day-label{display:flex;align-items:center;justify-content:center;padding:9px 4px;border:1px solid #ddd;border-radius:10px;font-size:12px;cursor:pointer;background:#fff}.day-check:checked + .day-label{background:#171717;color:#fff;border-color:#171717}
 .task{background:white;border-radius:17px;padding:14px 15px;margin:9px 0;display:flex;gap:12px;align-items:center;box-shadow:0 1px 3px #00000008}
 .check{width:24px;height:24px;border:2px solid #bbb;border-radius:50%;padding:0;background:white;flex:none;display:flex;align-items:center;justify-content:center}
 .task.done{opacity:.6}.task.done .name{text-decoration:line-through}
@@ -75,6 +76,7 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;ma
     <section><div class="section-title">📚 Навчання</div><div id="learning"></div></section>
     <section><div class="section-title">💼 Робота</div><div id="work"></div></section>
     <section><div class="section-title">🏠 Особисте</div><div id="personal"></div></section>
+    <section><div class="section-row"><div class="section-title">🔁 Регулярні задачі</div><div style="display:flex;gap:6px;align-items:center"><button class="mini-add" id="notifyBtn" onclick="enableNotifications()">🔔 Увімкнути нагадування</button><button class="mini-add" onclick="openRecurringModal()">+ Додати</button></div></div><div id="recurring"></div></section>
     <section><div class="section-title">✅ Виконані</div><div id="completed"></div></section>
   </div>
 
@@ -162,6 +164,41 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;ma
   </div>
 </div>
 
+<div class="modal" id="recurringModal" onclick="if(event.target===this)closeRecurringModal()">
+  <div class="sheet">
+    <h2>Нова регулярна задача</h2>
+    <input id="rName" placeholder="Наприклад: Математика — Костик">
+    <label>Напрямок</label>
+    <select id="rCategory">
+      <option value="Навчання">👦 Навчання</option>
+      <option value="Робота">💼 Робота</option>
+      <option value="Особисте">🏠 Особисте</option>
+    </select>
+    <input id="rSubject" placeholder="Предмет / проєкт">
+    <label>Дні тижня</label>
+    <div class="days-grid">
+      <div><input class="day-check" type="checkbox" id="r0" value="1"><label class="day-label" for="r0">Пн</label></div>
+      <div><input class="day-check" type="checkbox" id="r1" value="2"><label class="day-label" for="r1">Вт</label></div>
+      <div><input class="day-check" type="checkbox" id="r2" value="3"><label class="day-label" for="r2">Ср</label></div>
+      <div><input class="day-check" type="checkbox" id="r3" value="4"><label class="day-label" for="r3">Чт</label></div>
+      <div><input class="day-check" type="checkbox" id="r4" value="5"><label class="day-label" for="r4">Пт</label></div>
+      <div><input class="day-check" type="checkbox" id="r5" value="6"><label class="day-label" for="r5">Сб</label></div>
+      <div><input class="day-check" type="checkbox" id="r6" value="0"><label class="day-label" for="r6">Нд</label></div>
+    </div>
+    <label>Час</label>
+    <input id="rTime" type="time" value="17:00">
+    <label>Нагадати за</label>
+    <select id="rReminder">
+      <option value="0">У час початку</option>
+      <option value="5">5 хвилин</option>
+      <option value="15">15 хвилин</option>
+      <option value="30" selected>30 хвилин</option>
+      <option value="60">1 годину</option>
+    </select>
+    <button class="save" onclick="addRecurring()">Додати регулярну задачу</button>
+  </div>
+</div>
+
 <script>
 const seed=[
 {id:1,name:"Записати есе на відео",subject:"Українська мова",category:"Навчання",due:"2026-09-29",status:"todo",done:false,subtasks:[],comment:""},
@@ -180,6 +217,11 @@ let currentView="home";
 let calendarDate=new Date();
 calendarDate.setDate(1);
 let selectedDate=new Date().toISOString().slice(0,10);
+let recurringTasks=JSON.parse(localStorage.getItem("homepmRecurring")||"null")||[
+ {id:1,name:"Математика — Костик",category:"Навчання",subject:"Математика",days:[3,5],time:"17:00",reminder:30,active:true,deletedDates:[]}
+];
+recurringTasks=recurringTasks.map(r=>({...r,days:Array.isArray(r.days)?r.days:[],reminder:Number(r.reminder)||0,active:r.active!==false,deletedDates:Array.isArray(r.deletedDates)?r.deletedDates:[]}));
+localStorage.setItem("homepmRecurring",JSON.stringify(recurringTasks));
 
 function openTask(id){
  currentTaskId=id; let t=tasks.find(x=>x.id===id); if(!t)return;
@@ -217,29 +259,31 @@ function toggleSubtask(i){
  t.subtasks[i].done=!t.subtasks[i].done; save(); renderSubtasks();
 }
 function render(){
- let overdue=tasks.filter(t=>!t.done&&t.due<today).length;
- let td=tasks.filter(t=>!t.done&&t.due===today).length;
- let pr=tasks.filter(t=>!t.done&&t.status==="progress").length;
- document.getElementById("overdue").textContent=overdue;
- document.getElementById("today").textContent=td;
- document.getElementById("progress").textContent=pr;
+  ensureRecurringInstances();
+  let overdue=tasks.filter(t=>!t.done&&t.due<today).length;
+  let td=tasks.filter(t=>!t.done&&t.due===today).length;
+  let pr=tasks.filter(t=>!t.done&&t.status==="progress").length;
+  document.getElementById("overdue").textContent=overdue;
+  document.getElementById("today").textContent=td;
+  document.getElementById("progress").textContent=pr;
 
- let active=tasks.filter(t=>!t.done).sort((a,b)=>a.due.localeCompare(b.due));
- let completed=tasks.filter(t=>t.done).sort((a,b)=>b.due.localeCompare(a.due));
+  let active=tasks.filter(t=>!t.done).sort((a,b)=>a.due.localeCompare(b.due));
+  let completed=tasks.filter(t=>t.done).sort((a,b)=>b.due.localeCompare(a.due));
 
- let learning=active.filter(t=>t.category==="Навчання");
- let work=active.filter(t=>t.category==="Робота");
- let personal=active.filter(t=>t.category==="Особисте");
+  let learning=active.filter(t=>t.category==="Навчання");
+  let work=active.filter(t=>t.category==="Робота");
+  let personal=active.filter(t=>t.category==="Особисте");
 
- document.getElementById("learning").innerHTML=learning.map(card).join("")||'<div class="empty">Активних задач немає</div>';
- document.getElementById("work").innerHTML=work.map(card).join("")||'<div class="empty">Активних задач немає</div>';
- document.getElementById("personal").innerHTML=personal.map(card).join("")||'<div class="empty">Активних задач немає</div>';
-
- document.getElementById("completed").innerHTML=completed.map(card).join("")||'<div class="empty">Поки немає виконаних задач</div>';
-
- renderProjects();
- if(currentProject)renderProjectTasks();
- if(currentView==="calendar")renderCalendar();
+  document.getElementById("learning").innerHTML=learning.map(card).join("")||'<div class="empty">Активних задач немає</div>';
+  document.getElementById("work").innerHTML=work.map(card).join("")||'<div class="empty">Активних задач немає</div>';
+  document.getElementById("personal").innerHTML=personal.map(card).join("")||'<div class="empty">Активних задач немає</div>';
+  document.getElementById("completed").innerHTML=completed.map(card).join("")||'<div class="empty">Поки немає виконаних задач</div>';
+  renderRecurring();
+  renderProjects();
+  if(currentProject)renderProjectTasks();
+  if(currentView==="calendar")renderCalendar();
+  updateNotifyButton();
+  checkReminders();
 }
 function card(t){
  return `<div class="task ${t.done?'done':''}">
@@ -253,7 +297,19 @@ function toggle(id){
  let t=tasks.find(x=>x.id===id); if(!t)return;
  t.done=!t.done; if(t.done)t.status="todo"; save();
 }
-function deleteTask(id){if(confirm("Видалити виконану задачу?")){tasks=tasks.filter(t=>t.id!==id);save();}}
+function deleteTask(id){
+  const t=tasks.find(x=>x.id===id);
+  if(!t)return;
+  if(!confirm("Видалити виконану задачу?"))return;
+  if(t.recurringId){
+    const r=recurringTasks.find(x=>x.id===t.recurringId);
+    if(r&&!r.deletedDates.includes(t.due))r.deletedDates.push(t.due);
+    saveRecurring();
+  }
+  tasks=tasks.filter(x=>x.id!==id);
+  save();
+}
+
 function save(){localStorage.setItem("homepm",JSON.stringify(tasks));render()}
 function openModal(){document.getElementById("modal").style.display="flex";document.getElementById("due").value=today}
 function closeModal(){document.getElementById("modal").style.display="none"}
@@ -262,6 +318,110 @@ function addTask(){
  tasks.push({id:Date.now(),name,category:document.getElementById("category").value,subject:document.getElementById("subject").value||"Без проєкту",due:document.getElementById("due").value||today,status:document.getElementById("status").value,done:false,subtasks:[],comment:""});
  save();closeModal();document.getElementById("name").value="";document.getElementById("subject").value="";
 }
+function dayNames(days){
+  const names={0:"Нд",1:"Пн",2:"Вт",3:"Ср",4:"Чт",5:"Пт",6:"Сб"};
+  return (days||[]).slice().sort((a,b)=>a-b).map(d=>names[d]).join(", ");
+}
+function localDate(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
+function nextOccurrence(r){
+  const now=new Date();
+  const base=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  for(let i=0;i<14;i++){
+    const x=new Date(base); x.setDate(base.getDate()+i);
+    const dateStr=localDate(x);
+    if(!r.active||!(r.days||[]).includes(x.getDay())||(r.deletedDates||[]).includes(dateStr))continue;
+    const [hh,mm]=(r.time||"00:00").split(":").map(Number);
+    const when=new Date(x.getFullYear(),x.getMonth(),x.getDate(),hh,mm);
+    if(i===0&&when<now)continue;
+    return {date:dateStr,when};
+  }
+  return null;
+}
+function formatLongDate(d){return new Date(d+"T12:00").toLocaleDateString("uk-UA",{weekday:"short",day:"2-digit",month:"2-digit"});}
+function saveRecurring(){localStorage.setItem("homepmRecurring",JSON.stringify(recurringTasks));}
+function renderRecurring(){
+  const box=document.getElementById("recurring"); if(!box)return;
+  const active=recurringTasks.filter(r=>r.active);
+  box.innerHTML=active.map(r=>{
+    const n=nextOccurrence(r);
+    const reminder=r.reminder===0?"у час початку":r.reminder+" хв до";
+    return `<div class="recurring-card"><div class="recurring-top"><div><div class="recurring-name">${escapeHtml(r.name)}</div><div class="recurring-meta">${escapeHtml(r.category)} · ${escapeHtml(r.subject||"Без проєкту")} · ${dayNames(r.days)} · ${escapeHtml(r.time)}</div></div><div class="recurring-actions"><button onclick="deleteRecurring(${r.id})" title="Видалити" style="background:none;padding:4px;font-size:17px">🗑️</button></div></div><div class="recurring-next">${n?`Наступне: <b>${formatLongDate(n.date)} о ${escapeHtml(r.time)}</b>`:"Наступне заняття не заплановано"} · 🔔 ${reminder}</div></div>`;
+  }).join("")||'<div class="empty">Регулярних задач поки немає</div>';
+}
+function ensureRecurringInstances(){
+  let changed=false;
+  const base=new Date();
+  for(const r of recurringTasks.filter(x=>x.active)){
+    for(let i=0;i<8;i++){
+      const d=new Date(base.getFullYear(),base.getMonth(),base.getDate()+i);
+      if(!(r.days||[]).includes(d.getDay()))continue;
+      const dateStr=localDate(d);
+      if((r.deletedDates||[]).includes(dateStr))continue;
+      if(!tasks.some(t=>t.recurringId===r.id&&t.due===dateStr)){
+        tasks.push({id:Date.now()+Math.random(),name:r.name,subject:r.subject||"Без проєкту",category:r.category,due:dateStr,status:"todo",done:false,subtasks:[],comment:"",recurringId:r.id,recurringInstance:true});
+        changed=true;
+      }
+    }
+  }
+  if(changed)localStorage.setItem("homepm",JSON.stringify(tasks));
+}
+function openRecurringModal(){
+  document.getElementById("rName").value="";
+  document.getElementById("rCategory").value="Навчання";
+  document.getElementById("rSubject").value="Математика";
+  document.getElementById("rTime").value="17:00";
+  document.getElementById("rReminder").value="30";
+  [1,2,3,4,5,6,0].forEach((d,i)=>document.getElementById("r"+i).checked=(d===3||d===5));
+  document.getElementById("recurringModal").style.display="flex";
+}
+function closeRecurringModal(){document.getElementById("recurringModal").style.display="none";}
+function addRecurring(){
+  const name=document.getElementById("rName").value.trim(); if(!name)return;
+  const dayOrder=[1,2,3,4,5,6,0];
+  const selected=dayOrder.filter((d,i)=>document.getElementById("r"+i).checked);
+  if(!selected.length){alert("Оберіть хоча б один день.");return;}
+  recurringTasks.push({id:Date.now(),name,category:document.getElementById("rCategory").value,subject:document.getElementById("rSubject").value.trim()||"Без проєкту",days:selected,time:document.getElementById("rTime").value||"17:00",reminder:Number(document.getElementById("rReminder").value)||0,active:true,deletedDates:[]});
+  saveRecurring(); ensureRecurringInstances(); save(); closeRecurringModal();
+}
+function deleteRecurring(id){
+  if(!confirm("Видалити регулярну задачу?"))return;
+  recurringTasks=recurringTasks.filter(r=>r.id!==id);
+  tasks=tasks.filter(t=>t.recurringId!==id);
+  saveRecurring(); save();
+}
+function enableNotifications(){
+  if(!('Notification' in window)){alert("Цей браузер не підтримує сповіщення.");return;}
+  Notification.requestPermission().then(updateNotifyButton);
+}
+function updateNotifyButton(){
+  const b=document.getElementById("notifyBtn"); if(!b)return;
+  if(!('Notification' in window)){b.style.display='none';return;}
+  b.textContent=Notification.permission==='granted'?"🔔 Нагадування увімкнено":"🔔 Увімкнути нагадування";
+}
+function checkReminders(){
+  const now=new Date();
+  const keys=JSON.parse(localStorage.getItem("homepmNotified")||"[]");
+  let changed=false;
+  for(const r of recurringTasks.filter(x=>x.active)){
+    for(let delta=0;delta<=1;delta++){
+      const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()-delta);
+      const dateStr=localDate(d);
+      if(!(r.days||[]).includes(d.getDay())||(r.deletedDates||[]).includes(dateStr))continue;
+      const [hh,mm]=(r.time||"00:00").split(":").map(Number);
+      const when=new Date(d.getFullYear(),d.getMonth(),d.getDate(),hh,mm);
+      const reminderAt=new Date(when.getTime()-Number(r.reminder||0)*60000);
+      const key=r.id+"_"+dateStr;
+      if(now>=reminderAt&&now<=new Date(when.getTime()+5*60000)&&!keys.includes(key)){
+        const body=`${r.name} · ${r.time}`;
+        if('Notification' in window&&Notification.permission==='granted')new Notification('HOME PM',{body});
+        keys.push(key); changed=true;
+      }
+    }
+  }
+  if(changed)localStorage.setItem("homepmNotified",JSON.stringify(keys.slice(-200)));
+}
+setInterval(checkReminders,30000);
+
 function renderProjects(){
  const defs=[['Навчання','👦','Навчання'],['Робота','💼','Робота'],['Особисте','🏠','Особисте']];
  document.getElementById('projectGrid').innerHTML=defs.map(([label,emoji,key])=>{
