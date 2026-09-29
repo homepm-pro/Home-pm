@@ -15,7 +15,7 @@ button{border:0;border-radius:14px;padding:11px 15px;font-weight:600;cursor:poin
 section{margin:22px 0}.section-title{font-size:18px;font-weight:700;margin-bottom:10px}
 .task{background:white;border-radius:17px;padding:14px 15px;margin:9px 0;display:flex;gap:12px;align-items:center;box-shadow:0 1px 3px #00000008}
 .check{width:24px;height:24px;border:2px solid #bbb;border-radius:50%;padding:0;background:white;flex:none}
-.task.done{opacity:.48;text-decoration:line-through}.task-text{flex:1;cursor:pointer}.subject{font-size:12px;color:#777;margin-bottom:3px}.name{font-size:15px;font-weight:600}
+.task.done{opacity:.6}.task.done .name{text-decoration:line-through}.task-text{flex:1;cursor:pointer}.subject{font-size:12px;color:#777;margin-bottom:3px}.name{font-size:15px;font-weight:600}
 .empty{color:#888;background:white;border-radius:16px;padding:20px;text-align:center}
 nav{position:fixed;bottom:0;left:0;right:0;background:#fffffff2;backdrop-filter:blur(12px);display:flex;justify-content:center;gap:34px;padding:12px}
 nav span{font-size:12px;color:#666}.modal{display:none;position:fixed;inset:0;background:#0005;align-items:flex-end;justify-content:center}.sheet{background:white;width:100%;max-width:700px;border-radius:25px 25px 0 0;padding:22px}
@@ -117,10 +117,17 @@ function card(t){
 return `<div class="task ${t.done?'done':''}">
 <button class="check" onclick="event.stopPropagation();toggle(${t.id})">${t.done?'✓':''}</button>
 <div class="task-text" onclick="openTask(${t.id})"><div class="subject">${t.subject} · ${format(t.due)}</div><div class="name">${t.name}</div></div>
+${t.done?`<button onclick="event.stopPropagation();deleteTask(${t.id})" title="Видалити" style="background:none;padding:5px;font-size:18px">🗑️</button>`:""}
 </div>`;
 }
 function format(d){return new Date(d+"T12:00").toLocaleDateString("uk-UA",{day:"2-digit",month:"2-digit"})}
 function toggle(id){tasks=tasks.map(t=>t.id===id?{...t,done:!t.done}:t);save()}
+function deleteTask(id){
+if(confirm("Видалити виконану задачу?")){
+tasks=tasks.filter(t=>t.id!==id);
+save();
+}
+}
 function save(){localStorage.setItem("homepm",JSON.stringify(tasks));render()}
 function openModal(){document.getElementById("modal").style.display="flex";document.getElementById("due").value=today}
 function closeModal(){document.getElementById("modal").style.display="none"}
