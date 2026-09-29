@@ -53,6 +53,8 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;ma
 .calendar-day.today{border:2px solid #171717;padding:6px}
 .day-number{font-size:13px;font-weight:700;margin-bottom:5px}
 .calendar-task{display:block;font-size:10px;line-height:1.25;background:#f4f1ec;border-radius:7px;padding:3px 4px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.calendar-task .cat-icon{margin-right:2px}
+.upcoming-card .subject .cat-icon{margin-right:3px}
 .calendar-task.done{text-decoration:line-through;opacity:.55}
 .calendar-more{font-size:10px;color:#888;margin-top:3px}
 .selected-date{margin-top:16px}
@@ -76,6 +78,7 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;ma
     <section><div class="section-title">📚 Навчання</div><div id="learning"></div></section>
     <section><div class="section-title">💼 Робота</div><div id="work"></div></section>
     <section><div class="section-title">🏠 Особисте</div><div id="personal"></div></section>
+    <section><div class="section-title">📅 Найближчі</div><div id="upcoming"></div></section>
     <section><div class="section-row"><div class="section-title">🔁 Регулярні задачі</div><div style="display:flex;gap:6px;align-items:center"><button class="mini-add" id="notifyBtn" onclick="enableNotifications()">🔔 Увімкнути нагадування</button><button class="mini-add" onclick="openRecurringModal()">+ Додати</button></div></div><div id="recurring"></div></section>
     <section><div class="section-title">✅ Виконані</div><div id="completed"></div></section>
   </div>
@@ -277,6 +280,8 @@ function render(){
   document.getElementById("learning").innerHTML=learning.map(card).join("")||'<div class="empty">Активних задач немає</div>';
   document.getElementById("work").innerHTML=work.map(card).join("")||'<div class="empty">Активних задач немає</div>';
   document.getElementById("personal").innerHTML=personal.map(card).join("")||'<div class="empty">Активних задач немає</div>';
+  const upcoming=active.filter(t=>t.due>=today).slice(0,6);
+  document.getElementById("upcoming").innerHTML=upcoming.map(card).join("")||'<div class="empty">Найближчих задач немає ✨</div>';
   document.getElementById("completed").innerHTML=completed.map(card).join("")||'<div class="empty">Поки немає виконаних задач</div>';
   renderRecurring();
   renderProjects();
@@ -285,10 +290,14 @@ function render(){
   updateNotifyButton();
   checkReminders();
 }
+function categoryIcon(category){
+ const icons={Навчання:"👦",Робота:"💼",Особисте:"🏠"};
+ return icons[category]||"📌";
+}
 function card(t){
  return `<div class="task ${t.done?'done':''}">
  <button class="check" onclick="event.stopPropagation();toggle(${t.id})">${t.done?'✓':''}</button>
- <div class="task-text" onclick="openTask(${t.id})"><div class="subject">${escapeHtml(t.subject||'Без проєкту')} · ${format(t.due)}</div><div class="name">${escapeHtml(t.name)}</div></div>
+ <div class="task-text" onclick="openTask(${t.id})"><div class="subject"><span class="cat-icon">${categoryIcon(t.category)}</span>${escapeHtml(t.subject||'Без проєкту')} · ${format(t.due)}</div><div class="name">${escapeHtml(t.name)}</div></div>
  ${t.done?`<button onclick="event.stopPropagation();deleteTask(${t.id})" title="Видалити" style="background:none;padding:5px;font-size:18px">🗑️</button>`:""}
  </div>`;
 }
@@ -511,7 +520,7 @@ function dayCell(dateStr,day,otherMonth){
  let classes='calendar-day';
  if(otherMonth)classes+=' other-month';
  if(nowToday)classes+=' today';
- const parts=dayTasks.slice(0,3).map(t=>`<span class="calendar-task ${t.done?'done':''}">${escapeHtml(t.name)}</span>`).join('');
+ const parts=dayTasks.slice(0,3).map(t=>`<span class="calendar-task ${t.done?'done':''}"><span class="cat-icon">${categoryIcon(t.category)}</span> ${escapeHtml(t.name)}</span>`).join('');
  const more=dayTasks.length>3?`<div class="calendar-more">+${dayTasks.length-3} ще</div>`:'';
  const outline=selected?'outline:2px solid #999;outline-offset:-2px;':'';
  return `<div class="${classes}" style="${outline}" onclick="selectCalendarDate('${dateStr}')"><div class="day-number">${day}</div>${parts}${more}</div>`;
