@@ -148,26 +148,29 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;ma
 
 <div class="modal" id="taskModal" onclick="if(event.target===this)closeTask()">
   <div class="sheet">
-    <h2 id="taskTitle"></h2>
-    <div class="subject" id="taskMeta"></div>
+    <h2>Редагування задачі</h2>
+    <label>Назва задачі</label>
+    <input id="taskNameEdit" placeholder="Назва задачі">
+    <div class="row"><div><label>Предмет / проєкт</label><input id="taskSubjectEdit" placeholder="Предмет / проєкт"></div><div><label>Дата</label><input id="taskDueEdit" type="date"></div></div>
     <label>Час <span style="color:#aaa">(необов’язково)</span></label>
-    <input id="taskTimeEdit" type="time" onchange="updateTaskTime()">
+    <input id="taskTimeEdit" type="time">
     <label>Напрямок</label>
-    <select id="taskCategory" onchange="updateTaskCategory()">
+    <select id="taskCategory">
       <option value="Навчання">👦 Навчання</option>
       <option value="Робота">💼 Робота</option>
       <option value="Особисте">🏠 Особисте</option>
     </select>
     <label>Статус</label>
-    <select id="taskStatus" onchange="updateTaskStatus()">
+    <select id="taskStatus">
       <option value="todo">Не розпочато</option><option value="progress">У процесі</option><option value="done">Виконано</option>
     </select>
     <label>Підзадачі</label>
     <div id="subtasks"></div>
     <div class="row"><input id="subtaskInput" placeholder="Нова підзадача"><button onclick="addSubtask()">+</button></div>
     <label>Коментар</label>
-    <input id="taskComment" placeholder="Додати коментар" onchange="updateComment()">
-    <button class="save" onclick="closeTask()">Готово</button>
+    <input id="taskComment" placeholder="Додати коментар">
+    <button class="save" onclick="saveTaskEdits()">Зберегти зміни</button>
+    <button class="back-btn" style="width:100%;margin-top:8px" onclick="closeTask()">Скасувати</button>
   </div>
 </div>
 
@@ -232,29 +235,34 @@ localStorage.setItem("homepmRecurring",JSON.stringify(recurringTasks));
 
 function openTask(id){
  currentTaskId=id; let t=tasks.find(x=>x.id===id); if(!t)return;
- document.getElementById("taskTitle").textContent=t.name;
- document.getElementById("taskMeta").textContent=(t.subject||"Без проєкту")+" · дедлайн "+format(t.due)+(t.time?" · "+t.time:"");
+ document.getElementById("taskNameEdit").value=t.name||"";
+ document.getElementById("taskSubjectEdit").value=t.subject||"";
+ document.getElementById("taskDueEdit").value=t.due||today;
  document.getElementById("taskTimeEdit").value=t.time||"";
  document.getElementById("taskCategory").value=t.category||"Особисте";
- document.getElementById("taskStatus").value=t.done?"done":t.status;
+ document.getElementById("taskStatus").value=t.done?"done":(t.status||"todo");
  document.getElementById("taskComment").value=t.comment||"";
+ document.getElementById("taskTitle").textContent=t.name||"Редагування задачі";
  renderSubtasks(); document.getElementById("taskModal").style.display="flex";
 }
 function closeTask(){document.getElementById("taskModal").style.display="none";currentTaskId=null;render()}
-function updateTaskTime(){
+function saveTaskEdits(){
  let t=tasks.find(x=>x.id===currentTaskId); if(!t)return;
- t.time=document.getElementById("taskTimeEdit").value||""; save();
-}
-function updateTaskStatus(){
- let t=tasks.find(x=>x.id===currentTaskId); if(!t)return;
- let v=document.getElementById("taskStatus").value; t.status=v==="done"?"todo":v; t.done=v==="done"; save();
-}
-function updateTaskCategory(){
- let t=tasks.find(x=>x.id===currentTaskId); if(!t)return;
- t.category=document.getElementById("taskCategory").value; save();
-}
-function updateComment(){
- let t=tasks.find(x=>x.id===currentTaskId); if(t){t.comment=document.getElementById("taskComment").value;save();}
+ const name=document.getElementById("taskNameEdit").value.trim();
+ if(!name){alert("Вкажи назву задачі");return;}
+ t.name=name;
+ t.subject=document.getElementById("taskSubjectEdit").value.trim()||"Без проєкту";
+ t.due=document.getElementById("taskDueEdit").value||today;
+ t.time=document.getElementById("taskTimeEdit").value||"";
+ t.category=document.getElementById("taskCategory").value;
+ const v=document.getElementById("taskStatus").value;
+ t.status=v==="done"?"todo":v;
+ t.done=v==="done";
+ t.comment=document.getElementById("taskComment").value.trim();
+ localStorage.setItem("homepm",JSON.stringify(tasks));
+ document.getElementById("taskModal").style.display="none";
+ currentTaskId=null;
+ render();
 }
 function renderSubtasks(){
  let t=tasks.find(x=>x.id===currentTaskId); if(!t)return;
@@ -321,6 +329,7 @@ function card(t){
  return `<div class="task ${t.done?'done':''}">
  <button class="check" onclick="event.stopPropagation();toggle(${t.id})">${t.done?'✓':''}</button>
  <div class="task-text" onclick="openTask(${t.id})"><div class="subject"><span class="cat-icon">${categoryIcon(t.category)}</span>${escapeHtml(t.subject||'Без проєкту')} · ${format(t.due)}${t.time?" · "+escapeHtml(t.time):""}</div><div class="name">${escapeHtml(t.name)}</div></div>
+ <button onclick="event.stopPropagation();openTask(${t.id})" title="Редагувати" style="background:none;padding:5px;font-size:18px">✏️</button>
  ${t.done?`<button onclick="event.stopPropagation();deleteTask(${t.id})" title="Видалити" style="background:none;padding:5px;font-size:18px">🗑️</button>`:""}
  </div>`;
 }
