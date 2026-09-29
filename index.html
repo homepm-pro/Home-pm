@@ -73,7 +73,8 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;ma
       <div class="stat"><b id="progress">0</b><span>У процесі</span></div>
     </div>
     <section><div class="section-title">📚 Навчання</div><div id="learning"></div></section>
-    <section><div class="section-title">📅 Найближчі</div><div id="upcoming"></div></section>
+    <section><div class="section-title">💼 Робота</div><div id="work"></div></section>
+    <section><div class="section-title">🏠 Особисте</div><div id="personal"></div></section>
     <section><div class="section-title">✅ Виконані</div><div id="completed"></div></section>
   </div>
 
@@ -222,14 +223,20 @@ function render(){
  document.getElementById("overdue").textContent=overdue;
  document.getElementById("today").textContent=td;
  document.getElementById("progress").textContent=pr;
+
  let active=tasks.filter(t=>!t.done).sort((a,b)=>a.due.localeCompare(b.due));
  let completed=tasks.filter(t=>t.done).sort((a,b)=>b.due.localeCompare(a.due));
- document.getElementById("learning").innerHTML=active.slice(0,4).map(card).join("")||'<div class="empty">Задач поки немає</div>';
- document.getElementById("upcoming").innerHTML=active.slice(4).map(card).join("")||'<div class="empty">Усе під контролем ✨</div>';
- let completedSection=document.getElementById("completed");
- if(completedSection){
-   completedSection.innerHTML=completed.map(card).join("")||'<div class="empty">Поки немає виконаних задач</div>';
- }
+
+ let learning=active.filter(t=>t.category==="Навчання");
+ let work=active.filter(t=>t.category==="Робота");
+ let personal=active.filter(t=>t.category==="Особисте");
+
+ document.getElementById("learning").innerHTML=learning.map(card).join("")||'<div class="empty">Активних задач немає</div>';
+ document.getElementById("work").innerHTML=work.map(card).join("")||'<div class="empty">Активних задач немає</div>';
+ document.getElementById("personal").innerHTML=personal.map(card).join("")||'<div class="empty">Активних задач немає</div>';
+
+ document.getElementById("completed").innerHTML=completed.map(card).join("")||'<div class="empty">Поки немає виконаних задач</div>';
+
  renderProjects();
  if(currentProject)renderProjectTasks();
  if(currentView==="calendar")renderCalendar();
