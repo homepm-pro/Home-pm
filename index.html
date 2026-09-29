@@ -35,6 +35,7 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;ma
 .project-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .project-card{background:white;border-radius:20px;padding:18px 14px;box-shadow:0 1px 3px #0000000a;cursor:pointer;border:1px solid transparent}
 .project-card:hover{border-color:#ddd}
+.manage-card{background:white;border-radius:18px;padding:14px 15px;box-shadow:0 1px 3px #00000008}.manage-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 0;border-bottom:1px solid #eee}.manage-row:last-child{border-bottom:0}.manage-name{font-size:14px;flex:1}.manage-actions{display:flex;gap:4px}.manage-actions button{background:#f4f1ec;padding:6px 9px;border-radius:10px;font-size:14px}.manage-add{display:flex;gap:8px;margin-top:12px}.manage-add input{margin:0;flex:1}.manage-add button{background:#171717;color:#fff;white-space:nowrap}
 .project-card .emoji{font-size:30px;display:block;margin-bottom:8px}
 .project-card b{display:block;font-size:16px}.project-card span{display:block;color:#777;font-size:12px;margin-top:4px}
 .back-btn{background:rgba(255,255,255,.88);margin-bottom:10px;padding:8px 12px}
@@ -117,7 +118,31 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;ma
   </div>
 
   <div id="settingsView" style="display:none">
-    <header><div><h2 class="view-title">⚙ Налаштування</h2><div class="view-subtitle">Поки що тут буде місце для налаштувань HOME PM</div></div></header>
+    <header><div><h2 class="view-title">⚙ Налаштування</h2><div class="view-subtitle">Керування списками предметів і проєктів</div></div></header>
+
+    <section>
+      <div class="section-title">📚 Навчання</div>
+      <div class="manage-card">
+        <div id="settingsLearning"></div>
+        <div class="manage-add"><input id="addLearningItem" placeholder="Новий предмет"><button onclick="addListItem('Навчання','addLearningItem')">+ Додати</button></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">💼 Робота</div>
+      <div class="manage-card">
+        <div id="settingsWork"></div>
+        <div class="manage-add"><input id="addWorkItem" placeholder="Новий проєкт"><button onclick="addListItem('Робота','addWorkItem')">+ Додати</button></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-title">🏠 Особисте</div>
+      <div class="manage-card">
+        <div id="settingsPersonal"></div>
+        <div class="manage-add"><input id="addPersonalItem" placeholder="Новий напрямок"><button onclick="addListItem('Особисте','addPersonalItem')">+ Додати</button></div>
+      </div>
+    </section>
   </div>
 </div>
 
@@ -133,12 +158,12 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;ma
     <h2>Нова задача</h2>
     <input id="name" placeholder="Назва задачі">
     <label>Напрямок</label>
-    <select id="category">
+    <select id="category" onchange="populateSubjectSelect('subject',this.value,'')">
       <option value="Навчання">👦 Навчання</option>
       <option value="Робота">💼 Робота</option>
       <option value="Особисте">🏠 Особисте</option>
     </select>
-    <div class="row"><input id="subject" placeholder="Предмет / проєкт"><input id="due" type="date"></div>
+    <div class="row"><select id="subject"></select><input id="due" type="date"></div>
     <label>Час <span style="color:#aaa">(необов’язково)</span></label>
     <input id="taskTime" type="time">
     <label>Нагадування <span style="color:#aaa">(потрібен час задачі)</span></label>
@@ -160,7 +185,7 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;ma
     <h2>Редагування задачі</h2>
     <label>Назва задачі</label>
     <input id="taskNameEdit" placeholder="Назва задачі">
-    <div class="row"><div><label>Предмет / проєкт</label><input id="taskSubjectEdit" placeholder="Предмет / проєкт"></div><div><label>Дата</label><input id="taskDueEdit" type="date"></div></div>
+    <div class="row"><div><label>Предмет / проєкт</label><select id="taskSubjectEdit"></select></div><div><label>Дата</label><input id="taskDueEdit" type="date"></div></div>
     <label>Час <span style="color:#aaa">(необов’язково)</span></label>
     <input id="taskTimeEdit" type="time">
     <label>Нагадування <span style="color:#aaa">(потрібен час задачі)</span></label>
@@ -173,7 +198,7 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;ma
       <option value="1440">За 1 день</option>
     </select>
     <label>Напрямок</label>
-    <select id="taskCategory">
+    <select id="taskCategory" onchange="populateSubjectSelect('taskSubjectEdit',this.value,'')">
       <option value="Навчання">👦 Навчання</option>
       <option value="Робота">💼 Робота</option>
       <option value="Особисте">🏠 Особисте</option>
@@ -197,12 +222,12 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;ma
     <h2>Нова регулярна задача</h2>
     <input id="rName" placeholder="Наприклад: Математика — Костик">
     <label>Напрямок</label>
-    <select id="rCategory">
+    <select id="rCategory" onchange="populateSubjectSelect('rSubject',this.value,'')">
       <option value="Навчання">👦 Навчання</option>
       <option value="Робота">💼 Робота</option>
       <option value="Особисте">🏠 Особисте</option>
     </select>
-    <input id="rSubject" placeholder="Предмет / проєкт">
+    <select id="rSubject"></select>
     <label>Дні тижня</label>
     <div class="days-grid">
       <div><input class="day-check" type="checkbox" id="r0" value="1"><label class="day-label" for="r0">Пн</label></div>
@@ -237,6 +262,16 @@ const seed=[
 let tasks=JSON.parse(localStorage.getItem("homepm")||"null")||seed;
 tasks=tasks.map(t=>({...t,category:t.category||"Навчання",subtasks:t.subtasks||[],comment:t.comment||"",time:t.time||"",reminder:Number(t.reminder)||0}));
 localStorage.setItem("homepm",JSON.stringify(tasks));
+
+const defaultLists={
+  Навчання:["Українська мова","Українська література","Математика","Хімія","Фізика","Англійська мова","Інформатика"],
+  Робота:["Petroline","Groz","Stanly","QP Foods","Borysenko Watch","Handwatch","Odelik"],
+  Особисте:["Здоров’я","Краса","Свято","Дім","Покупки","Подорожі"]
+};
+let categoryLists=JSON.parse(localStorage.getItem("homepmLists")||"null")||JSON.parse(JSON.stringify(defaultLists));
+for(const key of Object.keys(defaultLists)){ if(!Array.isArray(categoryLists[key]))categoryLists[key]=defaultLists[key].slice(); }
+localStorage.setItem("homepmLists",JSON.stringify(categoryLists));
+
 const today=new Date().toISOString().slice(0,10);
 document.getElementById("date").textContent=new Date().toLocaleDateString("uk-UA",{day:"numeric",month:"long",year:"numeric"});
 let currentTaskId=null;
@@ -254,7 +289,8 @@ localStorage.setItem("homepmRecurring",JSON.stringify(recurringTasks));
 function openTask(id){
  currentTaskId=id; let t=tasks.find(x=>x.id===id); if(!t)return;
  document.getElementById("taskNameEdit").value=t.name||"";
- document.getElementById("taskSubjectEdit").value=t.subject||"";
+ document.getElementById("taskCategory").value=t.category||"Особисте";
+ populateSubjectSelect("taskSubjectEdit",t.category||"Особисте",t.subject||"");
  document.getElementById("taskDueEdit").value=t.due||today;
  document.getElementById("taskTimeEdit").value=t.time||"";
  document.getElementById("taskReminderEdit").value=String(Number(t.reminder)||0);
@@ -297,6 +333,65 @@ function toggleSubtask(i){
  let t=tasks.find(x=>x.id===currentTaskId); if(!t)return;
  t.subtasks[i].done=!t.subtasks[i].done; save(); renderSubtasks();
 }
+function saveLists(){localStorage.setItem("homepmLists",JSON.stringify(categoryLists));}
+function populateSubjectSelect(selectId,category,currentValue){
+  const select=document.getElementById(selectId); if(!select)return;
+  const list=Array.isArray(categoryLists[category])?categoryLists[category]:[];
+  let options='<option value="">Без проєкту / предмета</option>'+list.map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join('');
+  if(currentValue && !list.includes(currentValue))options+=`<option value="${escapeHtml(currentValue)}">${escapeHtml(currentValue)}</option>`;
+  select.innerHTML=options;
+  select.value=currentValue||"";
+}
+function renderSettingsLists(){
+  const targets={Навчання:"settingsLearning",Робота:"settingsWork",Особисте:"settingsPersonal"};
+  for(const [category,id] of Object.entries(targets)){
+    const box=document.getElementById(id); if(!box)continue;
+    const list=categoryLists[category]||[];
+    box.innerHTML=list.map((item,index)=>`<div class="manage-row"><div class="manage-name">${escapeHtml(item)}</div><div class="manage-actions"><button onclick="editListItem('${category}',${index})" title="Редагувати">✏️</button><button onclick="deleteListItem('${category}',${index})" title="Видалити">🗑️</button></div></div>`).join('')||'<div class="empty" style="padding:14px">Список поки порожній</div>';
+  }
+}
+function addListItem(category,inputId){
+  const input=document.getElementById(inputId); if(!input)return;
+  const value=input.value.trim(); if(!value)return;
+  if(!Array.isArray(categoryLists[category]))categoryLists[category]=[];
+  if(categoryLists[category].some(x=>x.toLocaleLowerCase()===value.toLocaleLowerCase())){alert("Такий пункт уже є у списку.");return;}
+  categoryLists[category].push(value);
+  saveLists();
+  input.value="";
+  renderSettingsLists();
+  refreshSubjectSelects();
+}
+function editListItem(category,index){
+  const current=(categoryLists[category]||[])[index]; if(current===undefined)return;
+  const value=prompt("Змінити назву:",current);
+  if(value===null)return;
+  const trimmed=value.trim(); if(!trimmed)return;
+  if((categoryLists[category]||[]).some((x,i)=>i!==index&&x.toLocaleLowerCase()===trimmed.toLocaleLowerCase())){alert("Такий пункт уже є у списку.");return;}
+  categoryLists[category][index]=trimmed;
+  saveLists();
+  renderSettingsLists();
+  refreshSubjectSelects();
+}
+function deleteListItem(category,index){
+  const current=(categoryLists[category]||[])[index]; if(current===undefined)return;
+  if(!confirm(`Видалити «${current}» зі списку?`))return;
+  categoryLists[category].splice(index,1);
+  saveLists();
+  renderSettingsLists();
+  refreshSubjectSelects();
+}
+function refreshSubjectSelects(){
+  const addCategory=document.getElementById("category")?.value||"Навчання";
+  const addValue=document.getElementById("subject")?.value||"";
+  populateSubjectSelect("subject",addCategory,addValue);
+  const editCategory=document.getElementById("taskCategory")?.value||"Навчання";
+  const editValue=document.getElementById("taskSubjectEdit")?.value||"";
+  populateSubjectSelect("taskSubjectEdit",editCategory,editValue);
+  const rCategory=document.getElementById("rCategory")?.value||"Навчання";
+  const rValue=document.getElementById("rSubject")?.value||"";
+  populateSubjectSelect("rSubject",rCategory,rValue);
+}
+
 function render(){
   ensureRecurringInstances();
   let overdue=tasks.filter(t=>!t.done&&t.due<today).length;
@@ -326,6 +421,7 @@ function render(){
   document.getElementById("completed").innerHTML=completed.map(card).join("")||'<div class="empty">Поки немає виконаних задач</div>';
   renderRecurring();
   renderProjects();
+  renderSettingsLists();
   if(currentProject)renderProjectTasks();
   if(currentView==="calendar")renderCalendar();
   updateNotifyButton();
@@ -371,7 +467,12 @@ function deleteTask(id){
 }
 
 function save(){localStorage.setItem("homepm",JSON.stringify(tasks));render()}
-function openModal(){document.getElementById("modal").style.display="flex";document.getElementById("due").value=today}
+function openModal(){
+  document.getElementById("modal").style.display="flex";
+  document.getElementById("due").value=today;
+  const category=document.getElementById("category").value||"Навчання";
+  populateSubjectSelect("subject",category,"");
+}
 function closeModal(){document.getElementById("modal").style.display="none"}
 function addTask(){
  let name=document.getElementById("name").value.trim(); if(!name)return;
@@ -432,6 +533,7 @@ function openRecurringModal(){
   document.getElementById("rCategory").value="Навчання";
   document.getElementById("rSubject").value="Математика";
   document.getElementById("rTime").value="17:00";
+  populateSubjectSelect("rSubject",document.getElementById("rCategory").value,"");
   document.getElementById("rReminder").value="30";
   [1,2,3,4,5,6,0].forEach((d,i)=>document.getElementById("r"+i).checked=(d===3||d===5));
   document.getElementById("recurringModal").style.display="flex";
@@ -523,6 +625,7 @@ function showView(view){
  document.getElementById(map[view]).classList.add('active');
  if(view==='projects')showProjectList();
  if(view==='calendar')renderCalendar();
+ if(view==='settings')renderSettingsLists();
 }
 
 function changeMonth(delta){
