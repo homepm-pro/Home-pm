@@ -53,7 +53,7 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;ma
 .calendar-day.today{border:2px solid #171717;padding:6px}
 .day-number{font-size:13px;font-weight:700;margin-bottom:5px}
 .calendar-task{display:block;font-size:10px;line-height:1.25;background:#f4f1ec;border-radius:7px;padding:3px 4px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.calendar-task .cat-icon{margin-right:2px}
+.calendar-task .cat-icon{margin-right:2px}.calendar-task-time{font-weight:700;margin-right:2px}.selected-date-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}.day-add{background:#171717;color:#fff;padding:8px 12px;border-radius:10px;font-size:12px}.day-collapse{background:#f4f1ec;padding:8px 10px;border-radius:10px;font-size:12px}
 .upcoming-card .subject .cat-icon{margin-right:3px}
 .calendar-task.done{text-decoration:line-through;opacity:.55}
 .calendar-more{font-size:10px;color:#888;margin-top:3px}
@@ -139,6 +139,8 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;ma
       <option value="Особисте">🏠 Особисте</option>
     </select>
     <div class="row"><input id="subject" placeholder="Предмет / проєкт"><input id="due" type="date"></div>
+    <label>Час <span style="color:#aaa">(необов’язково)</span></label>
+    <input id="taskTime" type="time">
     <select id="status"><option value="todo">Не розпочато</option><option value="progress">У процесі</option></select>
     <button class="save" onclick="addTask()">Додати задачу</button>
   </div>
@@ -148,6 +150,8 @@ input,select{width:100%;padding:13px;border:1px solid #ddd;border-radius:12px;ma
   <div class="sheet">
     <h2 id="taskTitle"></h2>
     <div class="subject" id="taskMeta"></div>
+    <label>Час <span style="color:#aaa">(необов’язково)</span></label>
+    <input id="taskTimeEdit" type="time" onchange="updateTaskTime()">
     <label>Напрямок</label>
     <select id="taskCategory" onchange="updateTaskCategory()">
       <option value="Навчання">👦 Навчання</option>
@@ -210,7 +214,7 @@ const seed=[
 {id:4,name:"Виконати вправу",subject:"Фізика",category:"Навчання",due:"2026-10-01",status:"todo",done:false,subtasks:[],comment:""}
 ];
 let tasks=JSON.parse(localStorage.getItem("homepm")||"null")||seed;
-tasks=tasks.map(t=>({...t,category:t.category||"Навчання",subtasks:t.subtasks||[],comment:t.comment||""}));
+tasks=tasks.map(t=>({...t,category:t.category||"Навчання",subtasks:t.subtasks||[],comment:t.comment||"",time:t.time||""}));
 localStorage.setItem("homepm",JSON.stringify(tasks));
 const today=new Date().toISOString().slice(0,10);
 document.getElementById("date").textContent=new Date().toLocaleDateString("uk-UA",{day:"numeric",month:"long",year:"numeric"});
@@ -229,13 +233,18 @@ localStorage.setItem("homepmRecurring",JSON.stringify(recurringTasks));
 function openTask(id){
  currentTaskId=id; let t=tasks.find(x=>x.id===id); if(!t)return;
  document.getElementById("taskTitle").textContent=t.name;
- document.getElementById("taskMeta").textContent=(t.subject||"Без проєкту")+" · дедлайн "+format(t.due);
+ document.getElementById("taskMeta").textContent=(t.subject||"Без проєкту")+" · дедлайн "+format(t.due)+(t.time?" · "+t.time:"");
+ document.getElementById("taskTimeEdit").value=t.time||"";
  document.getElementById("taskCategory").value=t.category||"Особисте";
  document.getElementById("taskStatus").value=t.done?"done":t.status;
  document.getElementById("taskComment").value=t.comment||"";
  renderSubtasks(); document.getElementById("taskModal").style.display="flex";
 }
 function closeTask(){document.getElementById("taskModal").style.display="none";currentTaskId=null;render()}
+function updateTaskTime(){
+ let t=tasks.find(x=>x.id===currentTaskId); if(!t)return;
+ t.time=document.getElementById("taskTimeEdit").value||""; save();
+}
 function updateTaskStatus(){
  let t=tasks.find(x=>x.id===currentTaskId); if(!t)return;
  let v=document.getElementById("taskStatus").value; t.status=v==="done"?"todo":v; t.done=v==="done"; save();
@@ -311,7 +320,7 @@ function categoryIcon(category){
 function card(t){
  return `<div class="task ${t.done?'done':''}">
  <button class="check" onclick="event.stopPropagation();toggle(${t.id})">${t.done?'✓':''}</button>
- <div class="task-text" onclick="openTask(${t.id})"><div class="subject"><span class="cat-icon">${categoryIcon(t.category)}</span>${escapeHtml(t.subject||'Без проєкту')} · ${format(t.due)}</div><div class="name">${escapeHtml(t.name)}</div></div>
+ <div class="task-text" onclick="openTask(${t.id})"><div class="subject"><span class="cat-icon">${categoryIcon(t.category)}</span>${escapeHtml(t.subject||'Без проєкту')} · ${format(t.due)}${t.time?" · "+escapeHtml(t.time):""}</div><div class="name">${escapeHtml(t.name)}</div></div>
  ${t.done?`<button onclick="event.stopPropagation();deleteTask(${t.id})" title="Видалити" style="background:none;padding:5px;font-size:18px">🗑️</button>`:""}
  </div>`;
 }
@@ -338,8 +347,8 @@ function openModal(){document.getElementById("modal").style.display="flex";docum
 function closeModal(){document.getElementById("modal").style.display="none"}
 function addTask(){
  let name=document.getElementById("name").value.trim(); if(!name)return;
- tasks.push({id:Date.now(),name,category:document.getElementById("category").value,subject:document.getElementById("subject").value||"Без проєкту",due:document.getElementById("due").value||today,status:document.getElementById("status").value,done:false,subtasks:[],comment:""});
- save();closeModal();document.getElementById("name").value="";document.getElementById("subject").value="";
+ tasks.push({id:Date.now(),name,category:document.getElementById("category").value,subject:document.getElementById("subject").value||"Без проєкту",due:document.getElementById("due").value||today,time:document.getElementById("taskTime").value||"",status:document.getElementById("status").value,done:false,subtasks:[],comment:""});
+ save();closeModal();document.getElementById("name").value="";document.getElementById("subject").value="";document.getElementById("taskTime").value="";
 }
 function dayNames(days){
   const names={0:"Нд",1:"Пн",2:"Вт",3:"Ср",4:"Чт",5:"Пт",6:"Сб"};
@@ -381,7 +390,7 @@ function ensureRecurringInstances(){
       const dateStr=localDate(d);
       if((r.deletedDates||[]).includes(dateStr))continue;
       if(!tasks.some(t=>t.recurringId===r.id&&t.due===dateStr)){
-        tasks.push({id:Date.now()+Math.random(),name:r.name,subject:r.subject||"Без проєкту",category:r.category,due:dateStr,status:"todo",done:false,subtasks:[],comment:"",recurringId:r.id,recurringInstance:true});
+        tasks.push({id:Date.now()+Math.random(),name:r.name,subject:r.subject||"Без проєкту",category:r.category,due:dateStr,time:r.time||"",status:"todo",done:false,subtasks:[],comment:"",recurringId:r.id,recurringInstance:true});
         changed=true;
       }
     }
@@ -534,34 +543,43 @@ function dayCell(dateStr,day,otherMonth){
  let classes='calendar-day';
  if(otherMonth)classes+=' other-month';
  if(nowToday)classes+=' today';
- const parts=dayTasks.slice(0,3).map(t=>`<span class="calendar-task ${t.done?'done':''}"><span class="cat-icon">${categoryIcon(t.category)}</span> ${escapeHtml(t.name)}</span>`).join('');
+ const sortedTasks=dayTasks.slice().sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99')||Number(a.done)-Number(b.done));
+ const parts=sortedTasks.slice(0,3).map(t=>`<span class="calendar-task ${t.done?'done':''}"><span class="cat-icon">${categoryIcon(t.category)}</span>${t.time?`<span class="calendar-task-time">${escapeHtml(t.time)}</span> `:''}${escapeHtml(t.name)}</span>`).join('');
  const more=dayTasks.length>3?`<div class="calendar-more">+${dayTasks.length-3} ще</div>`:'';
  const outline=selected?'outline:2px solid #999;outline-offset:-2px;':'';
  return `<div class="${classes}" style="${outline}" onclick="selectCalendarDate('${dateStr}')"><div class="day-number">${day}</div>${parts}${more}</div>`;
 }
 
 function selectCalendarDate(dateStr){
+ if(selectedDate===dateStr){selectedDate=null;renderCalendar();return;}
  selectedDate=dateStr;
  const d=new Date(dateStr+'T12:00');
  if(d.getFullYear()!==calendarDate.getFullYear()||d.getMonth()!==calendarDate.getMonth()){
    calendarDate=new Date(d.getFullYear(),d.getMonth(),1);
-   renderCalendar();
- }else{
-   renderCalendar();
  }
+ renderCalendar();
 }
 
+function openCalendarAdd(dateStr){
+ selectedDate=dateStr;
+ document.getElementById("modal").style.display="flex";
+ document.getElementById("due").value=dateStr;
+ document.getElementById("taskTime").value="";
+}
 function renderSelectedDate(){
  const panel=document.getElementById('selectedDatePanel');
  if(!panel)return;
  if(!selectedDate){
-   panel.innerHTML='<div class="empty">Оберіть дату, щоб побачити задачі</div>';
+   panel.innerHTML='<div class="empty">Оберіть дату, щоб розкрити день</div>';
    return;
  }
  const d=new Date(selectedDate+'T12:00');
  const title=d.toLocaleDateString('uk-UA',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
- const dayTasks=tasks.filter(t=>t.due===selectedDate).sort((a,b)=>Number(a.done)-Number(b.done)||a.name.localeCompare(b.name,'uk'));
- panel.innerHTML=`<div class="selected-date-title">${title}</div>${dayTasks.map(card).join('')||'<div class="empty">На цей день задач немає ✨</div>'}`;
+ const dayTasks=tasks.filter(t=>t.due===selectedDate).sort((a,b)=>{
+   const at=a.time||'99:99', bt=b.time||'99:99';
+   return at.localeCompare(bt)||Number(a.done)-Number(b.done)||a.name.localeCompare(b.name,'uk');
+ });
+ panel.innerHTML=`<div class="selected-date-head"><div class="selected-date-title">${title}</div><div style="display:flex;gap:6px"><button class="day-add" onclick="openCalendarAdd('${selectedDate}')">+ Додати</button><button class="day-collapse" onclick="selectCalendarDate('${selectedDate}')">Згорнути</button></div></div>${dayTasks.map(card).join('')||'<div class="empty">На цей день задач немає ✨</div>'}`;
 }
 
 function escapeHtml(value){
